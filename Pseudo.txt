@@ -1,0 +1,21 @@
+IRC client reference:
+    HexChat
+Using standard RFC 1459
+
+Commands to include:
+    /* For 42 */
+    KICK
+    INVITE
+    TOPIC
+    MODE
+
+    /* For HexChat */
+    NICK
+    USER
+    JOIN
+    PRIVMSG
+    PONG
+    PART
+    OPER
+    QUIT
+
