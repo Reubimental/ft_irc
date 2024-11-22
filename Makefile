@@ -7,6 +7,7 @@ DEBUG_FLAGS := -g -DDEBUG=1
 SRC_DIR	:= src/
 OBJ_DIR	:= obj/
 DEBUG_DIR := debug_obj/
+INC_DIR := inc/
 
 FILES := ft_irc
 
@@ -15,6 +16,9 @@ OBJ := $(addsuffix .o, $(addprefix $(OBJ_DIR), $(FILES)))
 DEP := $(OBJ:.o=.d)
 DEBUG_OBJ := $(patsubst $(OBJ_DIR)%, $(DEBUG_DIR)%, $(OBJ))
 DEBUG_DEP := $(DEBUG_OBJ:.o=.d)
+
+IFLAGS := -I$(INC_DIR)
+
 
 C_GRAY := \033[1;30m
 C_ORANGE := \033[0;33m
