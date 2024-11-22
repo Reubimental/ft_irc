@@ -4,18 +4,65 @@ Using standard RFC 1459
 
 Commands to include:
     /* For 42 */
+    // explicitely required
     KICK
     INVITE
     TOPIC
     MODE
-
-    /* For HexChat */
+    // implicitely required
     NICK
     USER
     JOIN
     PRIVMSG
+
+    /* For HexChat */
     PONG
     PART
     OPER
     QUIT
+
+
+Class/Struct variables
+    Server
+        -vector<Channel>    channels
+        -vector<Client>     clients
+        -int                port
+        -string             password
+
+    Channel
+        -vector<Client&> clients
+        -vector<Client&> operators
+
+    Client
+        -struct pollfd& connection
+        -bool           is_authenticated
+        -bool           is_regestered
+        -time           last_active
+        -string         message_buffer?
+        -string         nickname
+        -string         username
+        -string         hostname
+        -string         servername
+        -string         realname
+
+
+Message Descriptions
+
+PASS password
+    authenticates a client, must be done before any messages can be posted.
+    should be sent before one of USER or NICK
+
+NICK nickname
+    Sets a clients display name to %nickname. if the name is already in use,
+    drop this message and respond with error 436 (don't know how this works,
+    or if it's entirely required)
+
+USER username hostname servername realname
+    mostly useless information to us, but should be stored, and is required
+    before a user can send messages.
+
+KICK channel user [comment]
+    remove %user from %channel if the client sending the message has operator
+    in %channel. send back a response of what the server did?
+
 
