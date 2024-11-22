@@ -5,38 +5,43 @@
 #include <string>
 #include <queue>
 
+class Server; // defined in "Server.hpp"
+
 class Client
 {
 	private:
+		Server&					_server;
 		struct pollfd&			_socket;
 		bool					_isAuthenticated;
 		bool					_isRegestered;
 		time_t					_lastPing;
 		unsigned int			_clientId;
-		std::string				_messageBuffer;
+		std::string				_recieveBuffer;
 		std::string				_nickname;
 		std::string				_username;
 		std::string 			_realname;
 		std::queue<std::string>	_sendBuffer;
 
+		void	sendMessage(const std::string& message);
+
 	public:
-		Client(struct pollfd& socket);
+		Client(Server& server, struct pollfd& socket);
 		Client(const Client&);
 		~Client();
 
 		Client& operator=(const Client&);
 
-		const struct pollfd&		getSocket() const;
-		bool				isAuthenticated() const;
-		bool				isRegestered() const;
-		time_t				getLastPing() const;
-		int					getClientId() const;
-		const std::string 	getMessageBuffer() const;
-		const std::string 	getNickname() const;
-		const std::string 	getUsername() const;
-		const std::string 	getRealname() const;
+		const struct pollfd&	getSocket() const;
+		bool					isAuthenticated() const;
+		bool					isRegestered() const;
+		time_t					getLastPing() const;
+		int						getClientId() const;
+		const std::string 		getMessageBuffer() const;
+		const std::string 		getNickname() const;
+		const std::string 		getUsername() const;
+		const std::string 		getRealname() const;
 
-		void	authenticate(); // not sure if this will need a parameter
+		void	authenticate(const std::string& password);
 		void	beRegistered(); // may be done when both nick & user commands
 								// have been recieved, instead of as a setter
 
@@ -44,8 +49,11 @@ class Client
 
 		// void	setClientId(int newId); // shouldn't be changed?
 
-		void	setMessageBuffer(const std::string& newBuffer);
-		void	setNickname(const std::string& newNickname);
+		void	setRecieveBuffer(const std::string&);
+
+		// setNickname: returns 1 if nickname was successfully set, or -1 if
+		// there was an error, e.g. nickname collision
+		int		setNickname(const std::string&);
 
 		// void	setUsername(const std::string& newUsername); // I believe
 				// this shouldn't be changable
@@ -53,12 +61,11 @@ class Client
 		// void`setRealname(const std::string& newRealname); // do we even use 
 				// this member? also I don't think it's meant to change
 		
+		void	readSocket();
 
-		void	queueMessage(const std::string& message);
-		/*
-		attempts to send a message, or if it is unable, add it to the
-		send queue
-		*/
+		// attempts to send a message, or if it is unable, add it to the
+		// send queue
+		void	queueMessage(const std::string&);
 
-
+		void	clearQueue();
 };

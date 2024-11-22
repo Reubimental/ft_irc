@@ -2,12 +2,15 @@
 #include <poll.h>
 #include <string>
 #include <iostream>
+#include <algorithm>
 #include "Client.hpp"
+#include "Server.hpp"
 
 static unsigned int numClients = 0;
 
-Client::Client(struct pollfd& socket)
-    : _socket(socket)
+Client::Client(Server& server, struct pollfd& socket)
+    : _server(server)
+    , _socket(socket)
     , _lastPing(time(NULL))
     , _clientId(++numClients)
 {
@@ -15,12 +18,13 @@ Client::Client(struct pollfd& socket)
 }
 
 Client::Client(const Client& a)
-    : _socket(a._socket)
+    : _server(a._server)
+    , _socket(a._socket)
     , _isAuthenticated(a._isAuthenticated)
     , _isRegestered(a._isRegestered)
     , _lastPing(a._lastPing)
     , _clientId(a._clientId)
-    , _messageBuffer(a._messageBuffer)
+    , _recieveBuffer(a._recieveBuffer)
     , _nickname(a._nickname)
     , _username(a._username)
     , _realname(a._realname)
@@ -39,19 +43,7 @@ Client& Client::operator=(const Client& a)
     if (this == &a)
         return (*this);
 
-    std::cout << "Assigning Client -- don't do this haha" << std::endl;
-
-    // this makes no sense btw
-    _socket = a._socket;
-    _isAuthenticated = a._isAuthenticated;
-    _isRegestered = a._isRegestered;
-    _lastPing = a._lastPing;
-    _clientId = a._clientId;
-    _messageBuffer = a._messageBuffer;
-    _nickname = a._nickname;
-    _username = a._username;
-    _realname = a._realname;
-    _sendBuffer = a._sendBuffer;
+    std::cout << "Assigning Client -- don't do this haha -- OBJECT LEFT UNINITIALIZED" << std::endl;
 
     return (*this);
 }
@@ -84,7 +76,7 @@ int Client::getClientId() const
 
 const std::string Client::getMessageBuffer() const
 {
-    return _messageBuffer;
+    return _recieveBuffer;
 }
 
 const std::string Client::getNickname() const
@@ -103,3 +95,80 @@ const std::string Client::getRealname() const
 }
 
 
+void Client::authenticate(const std::string& password)
+{
+    if (!_isAuthenticated)
+        _isAuthenticated = _server.authenticate(password)
+}
+
+void Client::beRegistered()
+{
+    _isRegestered = true;
+}
+
+void Client::ping()
+{
+    time(&_lastPing);
+}
+
+void Client::setRecieveBuffer(const std::string& newBuffer)
+{
+    std::cout << "Setting message buffer -- did you mean to do this?" << std::endl;
+    _recieveBuffer
+}
+
+int Client::setNickname(const std::string& newNickname)
+{
+    if (server.nicknameAvailable(newNickname))
+    {
+        _nickname = newNickname;
+        return (1);
+    }
+    else
+    {
+        // return error to sender
+        return (-1);
+    }
+}
+
+void Client::readSocket()
+{
+    // read from _socket
+
+    if (false /*a full message is obtained -- ends with either \n or \r*/)
+}
+
+void    Client::queueMessage(const std::string& message)
+{
+    std::cout << "NOT FULLY IMPLEMENTED, NO MESSAGES SENT" << std::endl;
+    
+    if (true /*check socket*/)
+    {
+        if (!_sendBuffer.empty())
+        {
+            while (!_sendBuffer.empty())
+            {
+                // send message
+                _sendBuffer.pop();
+            }
+            // attempt to send old messages
+        }
+        sendMessage(message);
+    }
+    else
+        // can't send messages, add to queue instead
+        _sendBuffer.push(message);
+}
+
+void    Client::clearQueue()
+{
+    if (true /*check socket*/ && !_sendBuffer.empty())
+    {
+        while (!_sendBuffer.empty())
+        {
+            // send message
+            _sendBuffer.pop();
+        }
+
+    }
+}
