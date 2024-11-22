@@ -41,8 +41,6 @@ Class/Struct variables
         -string         message_buffer?
         -string         nickname
         -string         username
-        -string         hostname
-        -string         servername
         -string         realname
 
 
