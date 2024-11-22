@@ -32,13 +32,15 @@ Class/Struct variables
     Channel
         -vector<Client&> clients
         -vector<Client&> operators
+        -int             channelId
 
     Client
         -struct pollfd& connection
         -bool           is_authenticated
         -bool           is_regestered
         -time           last_active
-        -string         message_buffer?
+        -int            clientId
+        -string         message_buffer
         -string         nickname
         -string         username
         -string         realname
