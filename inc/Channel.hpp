@@ -14,12 +14,13 @@ class Channel
 		std::queue<std::string>	_messageBuffer;
         int						_channelId;
 
-		std::string				_channelName;
-		std::string				_channelTopic;
-		std::vector<char>		_modes;
-		std::string				_password;
-		int						_userLimit;
-		int						_currentUserCount;
+		std::string			_channelName;
+		std::string			_channelTopic;
+		std::vector<char>	_modes;
+		std::string			_password;
+		bool				_topicOpAccess;
+		int					_userLimit;
+		int					_currentUserCount;
 	public:
 		Channel();
 		~Channel();
@@ -40,6 +41,7 @@ class Channel
 		void	addClient(const Client& client);
 		void	removeClient(int clientId);
 		void	setUserLimit(int limit);
+		int		getUserCount() const;
 		int		getUserLimit() const;
 		/*   Topic   */
 		void		setTopic(const std::string& topic);
@@ -47,7 +49,8 @@ class Channel
 		/*   Modes   */
 		void	setMode(char mode);
 		void	unsetMode(char mode);
-		bool	hasMode(char mode);
+		bool	hasMode(char mode) const;
+		bool	implementMode(char mode);
 		/*   Passwords   */
 		void		setPassword(std::string password);
 		std::string	getPassword() const;
