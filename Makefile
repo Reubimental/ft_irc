@@ -42,7 +42,7 @@ $(NAME)_debug: $(DEBUG_OBJ) $(FLIBS)
 -include $(DEP)
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.cpp | $(OBJ_DIR:/=)
-	$(CXX) $(CXXFALGS) -c $< -o $@
+	$(CXX) $(CXXFALGS) $(IFLAGS) -c $< -o $@
 
 $(OBJ_DIR:/=):
 	@mkdir $(OBJ_DIR)
