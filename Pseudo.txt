@@ -10,6 +10,7 @@ Commands to include:
     TOPIC
     MODE
     // implicitely required
+    PASS
     NICK
     USER
     JOIN
@@ -48,21 +49,107 @@ Class/Struct variables
 
 Message Descriptions
 
-PASS password
+Basic message format
+
+[:<prefix>] <COMMAND> [<param>] [:<text>]
+a message can have a prefix, which contains no whitespace. this is often used
+for telling clients from who a message originated.
+
+errors, as well as certain types of replies, are identified by number, so the
+message looks like
+[:<prefix>] 000 [<param>] :error/reply message
+
+
+PASS <password>
     authenticates a client, must be done before any messages can be posted.
     should be sent before one of USER or NICK
+    REPLIES:
+        ERR_NEEDMOREPARAMS -- 461 <command> :Not enough parameters
+        ERR_ALREADYREGISTRED -- 462 :You may not reregister
 
-NICK nickname
+NICK <nickname>
     Sets a clients display name to %nickname. if the name is already in use,
     drop this message and respond with error 436 (don't know how this works,
     or if it's entirely required)
+    REPIES:
+        ERR_NONICKNAMEGIVEN -- 431 :No nickname given
+        ERR_ERRONEUSNICKNAME -- 432 <nick> :Erroneus nickname
+        ERR_NICKNAMEINUSE -- 433 <nick> :Nickname is already in use
+        ERR_NICKCOLLISION -- 436 <nick> :Nickname collision KILL // maybe not used?
 
-USER username hostname servername realname
+USER <username> <hostname> <servername> <realname>
     mostly useless information to us, but should be stored, and is required
     before a user can send messages.
+    REPLIES:
+        ERR_NEEDMOREPARAMS -- 461 <command> :Not enough parameters
+        ERR_ALREADYREGISTRED -- 462 :You may not reregister
 
-KICK channel user [comment]
+JOIN <channel>{, <channel} [<key>{, <key>}]
+    joins a user to a channel. key is the password, if required.
+    if the channel is invite only, there must be an invite for the sender
+    REPLIES:
+        ERR_NEEDMOREPARAMS -- 461 <command> :Not enough parameters
+        ERR_INVITEONLYCHAN -- 473 <channel> :Cannot join channel (+i)
+        ERR_BADCHANNELKEY -- 475 <channel> :Cannot join channel (+k)
+        ERR_CHANNELISFULL -- 471 <channel> :Cannot join channel (+l)
+        ERR_NOSUCHCHANNEL -- 403 <channel name> :No such channel
+        RPL_TOPIC -- 332 <channel> :<topic>
+
+PRIVMSG <receiver>{, <receiver>} <text to be sent>
+    Attempts to send a message to all of the receivers. Each receiver can be
+    either a channel or a user, we will not support host masks
+    Messages are sent like
+        :<sender> PRIVMSG <receiver>{, <receiver>} <text to be sent>
+    Replies:
+        ERR_NORECIPIENT -- 411 :No recipient given <command>
+        ERR_NOTEXTTOSEND -- 412 :No text to send
+        ERR_CANNOTSENDTOCHAN -- 404 <channel name> :Cannot send to channel
+        ERR_NOSUCHNICK -- 401 :No such nickname/channel
+
+
+KICK <channel> <user> [comment]
     remove %user from %channel if the client sending the message has operator
     in %channel. send back a response of what the server did?
+    REPLIES:
+        ERR_NEEDMOREPARAMS -- 461 <command> :Not enough parameters
+        ERR_NOSUCHCHANNEL -- 403 <channel name> :No such channel
+        ERR_CHANOPRIVSNEEDED -- 482 <channel> :You're not channel operator
+        ERR_NOTONCHANNEL -- 442 <channel> :You're not on that channel
 
+INVITE <user> <channel>
+    invite a user to a channel that is invite only
+    REPLIES:
+        ERR_NEEDMOREPARAMS -- 461 <command> :Not enough parameters
+        ERR_NOSUCHNICK -- 401 :No such nickname/channel
+        ERR_NOTONCHANNEL -- 442 <channel> :You're not on that channel
+        ERR_USERONCHANNEL -- 443 <user> <channel> :User already on channel
+        ERR_CHANOPRIVSNEEDED -- 482 <channel> :You're not channel operator
+        RPL_INVITING -- <channel> <nick>
 
+TOPIC <channel> [<topic>]
+    get or set the topic or a channel
+    REPLIES:
+        ERR_NEEDMOREPARAMS -- 461 <command> :Not enough parameters
+        ERR_NOTONCHANNEL -- 442 <channel> :You're not on that channel
+        RPL_NOTOPIC -- 331 <channel> :No topic is set
+        RPL_TOPIC -- 332 <channel> :<topic>
+        ERR_CHANOPRIVSNEEDED -- 482 <channel> :You're not channel operator
+
+MODE <channel> {[+|-]|o|p|s|i|t|n|b|v} [<limit>] [<user>]
+    haha not my job :)
+    REPLIES:
+        ERR_NEEDMOREPARAMS -- 461 <command> :Not enough parameters
+        RPL_CHANNELMODEIS -- 324 <channel> <mode> <mode params>
+        ERR_CHANOPRIVSNEEDED -- 482 <channel> :You're not channel operator
+        ERR_NOSUCHNICK -- 401 :No such nickname/channel
+        ERR_NOTONCHANNEL -- 442 <channel> :You're not on that channel
+        ERR_KEYSET -- 467 <channel> :Channel key already set
+        ERR_UNKNOWNMODE -- 472 <char> :is unknown mode char to me
+        ERR_NOSUCHCHANNEL -- 403 <channel name> :No such channel
+
+PONG <param?>
+    response from a sent ping. we should send a ping every 120? seconds the
+    client is inactive, then if no response received within another 30? seconds,
+    close the connection
+    REPLIES:
+        N/A
