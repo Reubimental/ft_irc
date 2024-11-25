@@ -1,0 +1,103 @@
+nate@localhost:~> nc irc.rizon.net 6667
+:solenoid.rizon.net NOTICE * :*** Found your hostname (cached)
+NICK red_back
+USER asdf asdf1 asdf2 asdf3
+PING :2982465919
+PONG :2982465919
+:solenoid.rizon.net NOTICE red_back :*** Your host is masked (Rizon-E0D01B0.static.tpgi.com.au)
+:solenoid.rizon.net 001 red_back :Welcome to the Rizon Internet Relay Chat Network red_back
+:solenoid.rizon.net 002 red_back :Your host is solenoid.rizon.net, running version plexus-4(hybrid-8.1.20)
+:solenoid.rizon.net 003 red_back :This server was created Apr  5 2022 at 19:04:12
+:solenoid.rizon.net 004 red_back solenoid.rizon.net plexus-4(hybrid-8.1.20) CDGNRSUWagilopqrswxyz BCIMNORSabcehiklmnopqstvz Iabehkloqv
+:solenoid.rizon.net 005 red_back CALLERID CASEMAPPING=rfc1459 DEAF=D KICKLEN=180 MODES=4 PREFIX=(qaohv)~&@%+ STATUSMSG=~&@%+ EXCEPTS=e INVEX=I NICKLEN=30 NETWORK=Rizon MAXLIST=beI:250 MAXTARGETS=4 :are supported by this server
+:solenoid.rizon.net 005 red_back CHANTYPES=# CHANLIMIT=#:250 CHANNELLEN=50 TOPICLEN=390 CHANMODES=beI,k,l,BCMNORScimnpstz WATCH=60 NAMESX UHNAMES AWAYLEN=180 ELIST=CMNTU SAFELIST KNOCK :are supported by this server
+:solenoid.rizon.net 251 red_back :There are 15 users and 9174 invisible on 18 servers
+:solenoid.rizon.net 252 red_back 44 :IRC Operators online
+:solenoid.rizon.net 253 red_back 1 :unknown connection(s)
+:solenoid.rizon.net 254 red_back 7855 :channels formed
+:solenoid.rizon.net 255 red_back :I have 9189 clients and 18 servers
+:solenoid.rizon.net 265 red_back :Current local users: 9189  Max: 11502
+:solenoid.rizon.net 266 red_back :Current global users: 9189  Max: 11502
+:solenoid.rizon.net 375 red_back :- solenoid.rizon.net Message of the Day - 
+:solenoid.rizon.net 372 red_back :-          11oo                            
+:solenoid.rizon.net 372 red_back :- 
+:solenoid.rizon.net 372 red_back :- 88d888b. dP d888888b .d8888b. 88d888b. 
+:solenoid.rizon.net 372 red_back :- 88'  `88 88    .d8P' 88'  `88 88'  `88 
+:solenoid.rizon.net 372 red_back :- 1188       88  .Y8P    88.  .88 88    88 
+:solenoid.rizon.net 372 red_back :- 11dP       dP d888888P `88888P' dP    dP
+:solenoid.rizon.net 372 red_back :- 
+:solenoid.rizon.net 372 red_back :- Rizon Chat Network -- http://rizon.net
+:solenoid.rizon.net 372 red_back :- 
+:solenoid.rizon.net 372 red_back :- Listening on ports: 6660 - 6669, 7000. SSL: 6697, 9999
+:solenoid.rizon.net 372 red_back :- 
+:solenoid.rizon.net 372 red_back :- Rules:
+:solenoid.rizon.net 372 red_back :- o No spamming or flooding
+:solenoid.rizon.net 372 red_back :- o No clones or malicious bots
+:solenoid.rizon.net 372 red_back :- o No takeovers
+:solenoid.rizon.net 372 red_back :- o No distribution of child pornography
+:solenoid.rizon.net 372 red_back :- o Clients must respond to VERSION requests
+:solenoid.rizon.net 372 red_back :- o Rizon staff may disconnect clients for any or no reason
+:solenoid.rizon.net 372 red_back :- 
+:solenoid.rizon.net 372 red_back :- First steps:
+:solenoid.rizon.net 372 red_back :- o To register your nick: /msg NickServ HELP
+:solenoid.rizon.net 372 red_back :- o To register your channel: /msg ChanServ HELP
+:solenoid.rizon.net 372 red_back :- o To get a vHost: /msg HostServ HELP REQUEST
+:solenoid.rizon.net 372 red_back :- o For other help with Rizon: /join #help
+:solenoid.rizon.net 372 red_back :- 
+:solenoid.rizon.net 372 red_back :- Usage of this network is a privilege, not a right. Rizon is a
+:solenoid.rizon.net 372 red_back :- transit provider, therefore no person or entity involved with
+:solenoid.rizon.net 372 red_back :- *.rizon.net or solenoid.rizon.net takes any responsibility for
+:solenoid.rizon.net 372 red_back :- users' actions. Absolutely no warranty is expressed or implied.
+:solenoid.rizon.net 376 red_back :End of /MOTD command.
+:red_back!~asdf@Rizon-E0D01B0.static.tpgi.com.au MODE red_back :+ix
+:Global!service@rizon.net NOTICE red_back :[Logon News - Dec 16 2013] Own a large/active channel or plan to get one going? Please read http://s.rizon.net/authline
+:Global!service@rizon.net NOTICE red_back :[Logon News - Feb 16 2022] First time on Rizon? Be sure to check out our wiki! https://wiki.rizon.net
+:Global!service@rizon.net NOTICE red_back :[Random News - Nov 29 2013] Want to make your vhost shiny by adding colors to it? Try your luck in #VIzon
+:py-ctcp!ctcp@ctcp-scanner.rizon.net PRIVMSG red_back :VERSION
+JOIN #VIzon
+:solenoid.rizon.net 477 red_back #VIzon :You need to login to services to join or speak in that channel.
+PRIVMSG NickServ HELP 
+:NickServ!service@rizon.net NOTICE red_back :NickServ allows you to "register" a nickname and
+:NickServ!service@rizon.net NOTICE red_back :prevent others from using it. The following
+:NickServ!service@rizon.net NOTICE red_back :commands allow for registration and maintenance of
+:NickServ!service@rizon.net NOTICE red_back :nicknames; to use them, type /msg NickServ command.
+:NickServ!service@rizon.net NOTICE red_back :For more information on a specific command, type
+:NickServ!service@rizon.net NOTICE red_back :/msg NickServ HELP command.
+:NickServ!service@rizon.net NOTICE red_back : 
+:NickServ!service@rizon.net NOTICE red_back :    REGISTER   Register a nickname
+:NickServ!service@rizon.net NOTICE red_back :    CONFIRM    Confirm a nickserv auth code
+:NickServ!service@rizon.net NOTICE red_back :    GROUP      Join a group
+:NickServ!service@rizon.net NOTICE red_back :    GLIST      Lists all nicknames in your group
+:NickServ!service@rizon.net NOTICE red_back :    IDENTIFY   Identify yourself with your password
+:NickServ!service@rizon.net NOTICE red_back :    ACCESS     Modify the list of authorized addresses
+:NickServ!service@rizon.net NOTICE red_back :    SET        Set options, including kill protection
+:NickServ!service@rizon.net NOTICE red_back :    DROP       Cancel the registration of a nickname
+:NickServ!service@rizon.net NOTICE red_back :    RECOVER    Kill another user who has taken your nick
+:NickServ!service@rizon.net NOTICE red_back :    RELEASE    Regain custody of your nick after RECOVER
+:NickServ!service@rizon.net NOTICE red_back :    GHOST      Disconnects a "ghost" IRC session using your nick
+:NickServ!service@rizon.net NOTICE red_back :    ALIST      List channels you have access on
+:NickServ!service@rizon.net NOTICE red_back :    INFO       Displays information about a given nickname
+:NickServ!service@rizon.net NOTICE red_back :    LOGOUT     Reverses the effect of the IDENTIFY command
+:NickServ!service@rizon.net NOTICE red_back :    STATUS     Returns the owner status of the given nickname
+:NickServ!service@rizon.net NOTICE red_back :    UPDATE     Updates your current status, i.e. it checks for new memos
+:NickServ!service@rizon.net NOTICE red_back :    CANCEL     Cancel your pending nick registration
+:NickServ!service@rizon.net NOTICE red_back :    RESETPASS  Reset the password of the given nickname
+:NickServ!service@rizon.net NOTICE red_back :    ENTERCODE  Confirm your password reset operation.
+:NickServ!service@rizon.net NOTICE red_back :    RESENDCODE Send the passcode for password reset again.
+:NickServ!service@rizon.net NOTICE red_back :    CONFIRMEMAIL     Confirm your new email address
+:NickServ!service@rizon.net NOTICE red_back : 
+:NickServ!service@rizon.net NOTICE red_back :Nicknames that are not used anymore are subject to
+:NickServ!service@rizon.net NOTICE red_back :the automatic expiration, i.e. they will be deleted
+:NickServ!service@rizon.net NOTICE red_back :after 90 days if not used.
+:NickServ!service@rizon.net NOTICE red_back : 
+:NickServ!service@rizon.net NOTICE red_back :NOTICE: This service is intended to provide a way for
+:NickServ!service@rizon.net NOTICE red_back :IRC users to ensure their identity is not compromised.
+:NickServ!service@rizon.net NOTICE red_back :It is NOT intended to facilitate "stealing" of
+:NickServ!service@rizon.net NOTICE red_back :nicknames or other malicious actions.  Abuse of NickServ
+:NickServ!service@rizon.net NOTICE red_back :will result in, at minimum, loss of the abused
+:NickServ!service@rizon.net NOTICE red_back :nickname(s).
+PRIVMSG NickServ REGISTER
+:NickServ!service@rizon.net NOTICE red_back :Syntax: REGISTER password email
+:NickServ!service@rizon.net NOTICE red_back :/msg NickServ HELP REGISTER for more information.
+QUIT
+ERROR :Closing Link: 60-241-122-37.static.tpgi.com.au ()
