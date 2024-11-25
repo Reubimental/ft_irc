@@ -14,7 +14,7 @@ Client::Client(Server& server, struct pollfd& socket)
     , _lastPing(time(NULL))
     , _clientId(++numClients)
 {
-    std::cout << "Constructing Client" << std::endl;
+    std::cout << "Initializing Client ID " << _clientId << std::endl;
 }
 
 Client::Client(const Client& a)
@@ -35,7 +35,7 @@ Client::Client(const Client& a)
 
 Client::~Client()
 {
-    std::cout << "Destroying Client" << std::endl;
+    std::cout << "Removing Client ID " << _clientId << std::endl;
 }
 
 Client& Client::operator=(const Client& a)
@@ -43,7 +43,7 @@ Client& Client::operator=(const Client& a)
     if (this == &a)
         return (*this);
 
-    std::cout << "Assigning Client -- don't do this haha -- OBJECT LEFT UNINITIALIZED" << std::endl;
+    std::cout << "Assigning Client -- don't do this haha -- OBJECT LEFT UNTOUCHED" << std::endl;
 
     return (*this);
 }
