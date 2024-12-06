@@ -6,6 +6,20 @@
 #include <string>
 #include <algorithm>
 
+std::vector<std::string> validOpCommands =
+	{ "KICK",
+	"INVITE",
+	"TOPIC",
+	"MODE",
+	"PASS",
+	"NICK",
+	"USER",
+	"JOIN",
+	"PRIVMSG",
+	"PONG",
+	"PART",
+	"QUIT" };
+
 struct Commands
 {
 	std::string					prefix;
@@ -47,7 +61,7 @@ class Channel
 		/*   Client Manipulation   */
 		bool	isFull() const;
 		void	addClient(const Client& client);
-		void	removeClient(int clientId);
+		void	removeClient(std::string client);
 		void	setUserLimit(int limit);
 		int		getUserCount() const;
 		int		getUserLimit() const;
@@ -62,6 +76,7 @@ class Channel
 		std::string	getPassword() const;
 		/*   Utility   */
 		unsigned int	findIdByNick(std::string nick);
-		/*   Commands   */
-		int	handleCommands(std::string input);
+
+/////////////////*   SERVER STUFF   */////////////////
+		int		handleCommands(std::string input);
 };

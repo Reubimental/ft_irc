@@ -9,10 +9,10 @@ OBJ_DIR	:= obj/
 DEBUG_DIR := debug_obj/
 INC_DIR := inc/
 
-FILES := ft_irc_test \
+FILES := Channel \
 		 Client \
 
-SRC := $(addsuffix .c, $(addprefix $(SRC_DIR), $(FILES)))
+SRC := $(addsuffix .cpp, $(addprefix $(SRC_DIR), $(FILES)))
 OBJ := $(addsuffix .o, $(addprefix $(OBJ_DIR), $(FILES)))
 DEP := $(OBJ:.o=.d)
 DEBUG_OBJ := $(patsubst $(OBJ_DIR)%, $(DEBUG_DIR)%, $(OBJ))

@@ -101,8 +101,9 @@ void	Channel::addClient(const Client& client)
 	std::cout << "Sorry, Channel \"" << this->getChannelName() << "\" is full." << this->getUserCount() << "/" << this->getUserLimit() << std::endl;
 }
 
-void	Channel::removeClient(int clientId)
+void	Channel::removeClient(std::string client)
 {
+	unsigned int clientId = findIdByNick(client);
 	for (std::vector<Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		if (it->getClientId() == clientId)
@@ -250,3 +251,99 @@ unsigned int	Channel::findIdByNick(std::string nick)
 	std::cout << "Nickname does not exist in database." << std::endl;
 }
 
+//////////////////////////////////////*   SERVER STUFF   *//////////////////////////////////////
+
+int	Channel::handleCommands(std::string input)
+{
+	std::istringstream iss(input);
+	std::vector<std::string> tokens;
+	std::vector<std::string>::iterator it;
+	std::string token;
+	std::string	prefix;
+
+	if (iss >> token)
+	{
+		if (token[0] == ':')
+			prefix = token;
+		else
+			tokens.push_back(token);
+	}
+
+	while (iss >> token)
+	{
+		if (token[0] == ':')
+			std::getline(iss >> std::ws, token);
+		else
+			tokens.push_back(token);
+	}
+	if (tokens[0] == "KICK")
+	{
+		this->kickCommand(tokens);
+	}
+	else if (tokens[0] == "INVITE")
+	{
+
+	}
+	else if (tokens[0] == "TOPIC")
+	{
+		
+	}
+	else if (tokens[0] == "MODE")
+	{
+		
+	}
+	else if (tokens[0] == "PASS")
+	{
+		
+	}
+	else if (tokens[0] == "NICK")
+	{
+		
+	}
+	else if (tokens[0] == "USER")
+	{
+		
+	}
+	else if (tokens[0] == "JOIN")
+	{
+		
+	}
+	else if (tokens[0] == "PRIVMSG")
+	{
+		
+	}
+	else if (tokens[0] == "PONG")
+	{
+		
+	}
+	else if (tokens[0] == "PART")
+	{
+		
+	}
+	else if (tokens[0] == "QUIT")
+	{
+		
+	}
+}
+
+void	Server::kickCommand(std::vector<std::string> params)
+{
+	Channel* channel;
+	if (tokens.size() < 3)
+		client.sendMessage(ERR_NEEDMOREPARAMS("KICK"));
+	channel = this->getChannelByName(tokens[1]);
+	if (!channel)
+		client.sendMessage(ERR_NOSUCHCHANNEL(tokens[1]));
+	channel.removeClient(tokens[2]);
+	std::cout << "User " << tokens[2] << " has been kicked from channel " << tokens[1] << "." << std::endl;
+		if (tokens[3])
+			std::cout << "Reason: " << tokens[3] << std::endl;
+}
+/*
+	The token index that is multi-string for each:
+		KICK <3>
+		TOPIC <2>
+		USER <4>
+		PRIVMSG <2>
+		QUIT <1>
+*/

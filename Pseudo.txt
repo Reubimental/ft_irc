@@ -3,24 +3,25 @@ IRC client reference:
 Using standard RFC 1459
 
 Commands to include:
-    /* For 42 */
+            /* For 42 */
     // explicitely required
-    KICK
-    INVITE
-    TOPIC
-    MODE
-    // implicitely required
-    PASS
-    NICK
-    USER
-    JOIN
-    PRIVMSG
+    KICK            KICK <#channel> <nickname> [<comment>]
+    INVITE          INVITE <nickname> <#channelname>
+    TOPIC           TOPIC <#channel> [<topic>]
+    MODE            MODE <#channel> <+|-> <i|t|k|o|l> [<limit|user|password>]
 
-    /* For HexChat */
-    PONG
-    PART
+    // implicitely required
+    PASS            PASS <password>
+    NICK            NICK <nickname>
+    USER            USER <username> <hostname> <servername> <:realname>
+    JOIN            JOIN <#channel> [<key>]
+    PRIVMSG         PRIVMSG <receiver>[,<receiver>] <message>
+
+            /* For HexChat */
+    PONG            PONG <daemon>
+    PART            PART <#channel>[,<#channel>]
     OPER // we're not implementing server operators, this doesn't make sense :(
-    QUIT
+    QUIT            QUIT [<message>]
 
 
 Class/Struct variables
