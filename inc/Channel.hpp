@@ -6,33 +6,41 @@
 #include <string>
 #include <algorithm>
 
+struct Commands
+{
+	std::string					prefix;
+	std::string					command;
+	std::vector<std::string>	params;
+};
+
 class Channel
 {
 	private:
 		std::vector<Client>		_clients;
 		std::vector<Client>		_operators;
 		std::queue<std::string>	_messageBuffer;
-        int						_channelId;
-
-		std::string			_channelName;
-		std::string			_channelTopic;
-		std::vector<char>	_modes;
-		std::string			_password;
-		bool				_topicOpAccess;
-		int					_userLimit;
-		int					_currentUserCount;
+        unsigned int			_channelId;
+		std::string				_channelName;
+		std::string				_channelTopic;
+		unsigned int			_currentUserCount;
+		/*   MODES   */
+		bool		_inviteOnly;
+		bool		_topicOpAccess;
+		std::string	_password;
+		int			_userLimit;
 	public:
 		Channel();
+		Channel(std::string channelName);
 		~Channel();
 		/*   Setters   */
-		void	setChannelId(int id);
+		// void	setChannelId(int id); ### REDUNDANT ###
 		void	setChannelName(const std::string& name);
 		/*   Getters   */
 		int			getChannelId() const;
 		std::string	getChannelName() const;
 		/*   Client Auth Check   */
-		bool	checkOp(int clientId) const;
-		bool	checkClient(int clientId) const;
+		bool	checkOp(std::string nickname, int change);
+		bool	checkClient(std::string nickname);
 		/*   Print sent messages   */
 		void	printMessage(const std::string& message, const std::string& sender);
 		void	broadcastMessage(const std::string& message, const std::string& sender);
@@ -50,8 +58,13 @@ class Channel
 		void	setMode(char mode);
 		void	unsetMode(char mode);
 		bool	hasMode(char mode) const;
-		bool	implementMode(char mode);
+		bool	implementMode(char toggle, char mode);
+		bool	implementMode(char toggle, char mode, std::vector<std::string> variables);
 		/*   Passwords   */
 		void		setPassword(std::string password);
 		std::string	getPassword() const;
+		/*   Utility   */
+		unsigned int	findIdByNick(std::string nick);
+		/*   Commands   */
+		int	handleCommands(std::string input);
 };

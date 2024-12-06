@@ -1,11 +1,18 @@
 #include "Channel.hpp"
 #include <iostream>
+#include <vector>
 
 static unsigned int	channelID = 1;
 
-Channel::Channel()
+Channel::Channel(): _channelName("Channel " + std::to_string(channelID)), _channelId(channelID)
 {
-	setChannelId(channelID++);
+	channelID++;
+	std::cout << "Channel of ID " << getChannelId() << " has been initiated." << std::endl;
+}
+
+Channel::Channel(std::string channelName): _channelName(channelName), _channelId(channelID)
+{
+	channelID++;
 	std::cout << "Channel of ID " << getChannelId() << " has been initiated." << std::endl;
 }
 
@@ -19,10 +26,10 @@ int Channel::getChannelId() const
 	return (this->_channelId);
 }
 
-void	Channel::setChannelId(int id)
-{
-	this->_channelId = id;
-}
+// void	Channel::setChannelId(int id)  ### REDUNDANT ###
+// {
+// 	this->_channelId = id;
+// }
 
 std::string	Channel::getChannelName() const
 {
@@ -34,23 +41,35 @@ void	Channel::setChannelName(const std::string& name)
 	this->_channelName = name;
 }
 
-bool	Channel::checkClient(int clientId) const
+bool	Channel::checkClient(std::string nickname)
 {
+	unsigned int ID = this->findIdByNick(nickname);
+	std::vector<Client>::iterator it;
+
 	for (std::vector<Client>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
-		if (it->getClientId() == clientId)
+		if (it->getClientId() == ID)
 			return (true);
 	}
 	return (false);
 }
 
-bool	Channel::checkOp(int clientId) const
+bool	Channel::checkOp(std::string nickname, int change)
 {
-	for (std::vector<Client>::const_iterator it = _operators.begin(); it != _operators.end(); ++it)
+	unsigned int ID = findIdByNick(nickname);
+	std::vector<Client>::iterator it;
+
+	for (it = _operators.begin(); it != _operators.end(); ++it)
 	{
-		if (it->getClientId() == clientId)
+		if (it->getClientId() == ID)
+		{
+			if (change == -1)
+				_operators.erase(it);
 			return (true);
+		}
 	}
+	if (change == 1)
+		this->_operators.push_back(it);
 	return (false);
 }
 
@@ -79,7 +98,7 @@ void	Channel::addClient(const Client& client)
 		this->_currentUserCount++;
 		return ;
 	}
-	std::cout << "Sorry, Channel " << this->getChannelName() << " is full." << this->getUserCount() << "/" << this->getUserLimit() << std::endl;
+	std::cout << "Sorry, Channel \"" << this->getChannelName() << "\" is full." << this->getUserCount() << "/" << this->getUserLimit() << std::endl;
 }
 
 void	Channel::removeClient(int clientId)
@@ -122,55 +141,106 @@ std::string	Channel::getTopic() const
 
 void	Channel::setMode(char mode)
 {
-	if (!this->hasMode(mode))
-	{
-		this->implementMode(mode);
-		return ;
-	}
-	this->unsetMode(mode);
 }
 
 void	Channel::unsetMode(char mode)
 {
-	 _modes.erase(std::remove(_modes.begin(), _modes.end(), mode), _modes.end());
+	/*   unset the current MODE   */
 }
 
 bool	Channel::hasMode(char mode) const
 {
-	return (std::find(_modes.begin(), _modes.end(), mode) != _modes.end());
+	/*   check if the current mode is already set   */
 }
 
-bool	Channel::implementMode(char mode)
+bool	Channel::implementMode(char toggle, char mode)
 {
-	/* Implement all Mode functions here */
 	switch(mode)
 	{
-		case('i'): // Set/Remove Invite Only channel
+		case('i'):
 		{
+			if (toggle == '-')
+				this->_inviteOnly = false;					//	unset if channel mode Invite-Only is Active.
+			else if (toggle == '+')
+				this->_inviteOnly = true;					//	set if channel mode Invite-Only is Inactive.
 			break ;
 		}
-		case('t'): // Set/Remove The ability to use TOPIC command to Operator Only.
+		case('t'):
 		{
+			if (toggle == '-' && this->_topicOpAccess)
+				this->_topicOpAccess = false;
+			else if (toggle == '+' && !this->_topicOpAccess)
+				this->_topicOpAccess = true;
 			break ;
 		}
-		case('k'): // Set/Remove the channel key (password)
+		case('k'):
 		{
+			std::cout << "Please input a password with this command." << std::endl;
 			break ;
 		}
-		case('o'): // Give/Take Operator privilege
+		case('o'):
 		{
+			std::cout << "Please provide a NICK to op." << std::endl;
 			break ;
 		}
-		case('l'): // Set/Remove user limit on Channel
+		case('l'):
 		{
+			std::cout << "Please input the number of users you'd like to limit this channel to." << std::endl;
 			break ;
 		}
 		default:
 		{
-			return ;
+			return (false);
 		}
 	}
-	this->_modes.push_back(mode);
+	return (true);
+}
+
+bool	Channel::implementMode(char toggle, char mode, std::vector<std::string> variables)
+{
+	switch(mode)
+	{
+		case('i'): // Set/Remove Invite Only channel
+		{
+			std::cout << "Please do not provide any further variables for this MODE." << std::endl;
+		}
+		case('t'): // Set/Remove The ability to use TOPIC command to Operator Only.
+		{
+			std::cout << "Please do not provide any further variables for this MODE." << std::endl;
+		}
+		case('k'): // Set/Remove the channel key (password)
+		{
+			if (toggle == '-' && !this->getPassword().empty())
+				this->getPassword().clear();
+			else if (toggle == '+')
+				this->setPassword(variables[0]);
+			break ;
+		}
+		case('o'): // Give/Take Operator privilege
+		{
+			if (toggle == '-')
+				this->checkOp( /*   needs variable-input implementation   */  );
+			else if (toggle == '+')
+				this->checkOp( /*   needs variable-input implementation   */  );
+			break ;
+		}
+		case('l'): // Set/Remove user limit on Channel
+		{
+			if (this->getUserLimit())
+			{
+				if (toggle == '-')
+					this->setUserLimit(0);
+				else if (toggle == '+' && std::isdigit(std::stoi(variables[0])))
+					this->setUserLimit(std::stoi(variables[0]));
+			}
+			break ;
+		}
+		default:
+		{
+			return (false);
+		}
+	}
+	return (true);
 }
 
 void	Channel::setPassword(std::string password)
@@ -182,3 +252,15 @@ std::string	Channel::getPassword() const
 {
 	return (this->_password);
 }
+
+unsigned int	Channel::findIdByNick(std::string nick)
+{
+	int	ID;
+	for (std::vector<Client>::const_iterator it = this->_clients.begin(); it != this->_clients.end(); it++)
+	{
+		if (nick == _clients.getNickname())
+			return (_clients.getClientId());
+	}
+	std::cout << "Nickname does not exist in database." << std::endl;
+}
+
