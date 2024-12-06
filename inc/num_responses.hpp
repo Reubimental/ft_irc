@@ -8,6 +8,8 @@
 
 /* I hate iostreams >:( */
 
+#define ERR_UNKNOWNCOMMAND(command)         (std::ostringstream << "421 " << command << " :Unknown command").str()
+
 // topic
 #define RPL_NOTOPIC(channel)                (std::ostringstream << "331 " << channel << " :No topic is set").str()
 #define RPL_TOPIC(channel, topic)           (std::ostringstream << "332 " << channel << " :" << topic).str()

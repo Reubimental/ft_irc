@@ -11,6 +11,7 @@ INC_DIR := inc/
 
 FILES := ft_irc_test \
 		 Client \
+		 Server \
 
 SRC := $(addsuffix .c, $(addprefix $(SRC_DIR), $(FILES)))
 OBJ := $(addsuffix .o, $(addprefix $(OBJ_DIR), $(FILES)))

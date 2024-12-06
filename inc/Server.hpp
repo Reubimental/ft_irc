@@ -11,17 +11,18 @@ class Server
 private:
     Server(const Server&);
     Server& operator=(const Server&);
+
+    void _Server(int port);
     
     int                         _sockfd;
     std::vector<Client>         _clients;
     std::vector<Channel>        _channels;
-    struct pollfd*              _sockets;
+    std::vector<struct pollfd>  _sockets;
     int                         _numSockets;
     std::string                 _password;
     std::vector<std::string*>   _nicknames;
     std::vector<std::string>    _motd;
 
-    void newClient(/* things? */);
 
 public:
     Server();
@@ -31,7 +32,11 @@ public:
     ~Server();
 
     void run();
-    void doCommand(const std::string& cmd, Client&);
+
+    void doCommand(const std::string& cmdstr, Client&);
+    void newClient(struct pollfd& pollresult);
     bool authenticate(const std::string& password);
     bool nicknameAvailable(const std::string& nick);
+    Channel* getChannelByName(const std::string& channel);
+    Client* getClientByNick(const std::string& nick);
 };

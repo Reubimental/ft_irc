@@ -10,8 +10,8 @@ class Server; // defined in "Server.hpp"
 class Client
 {
 	private:
-		Server&					_server;
-		struct pollfd&			_socket;
+		Server*					_server;
+		int						_connfd;
 		bool					_isAuthenticated;
 		bool					_isRegestered;
 		time_t					_lastPing;
@@ -25,21 +25,22 @@ class Client
 		void	sendMessage(const std::string& message);
 
 	public:
-		Client(Server& server, struct pollfd& socket);
+		Client(Server* server, int connfd);
 		Client(const Client&);
 		~Client();
 
 		Client& operator=(const Client&);
 
-		const struct pollfd&	getSocket() const;
-		bool					isAuthenticated() const;
-		bool					isRegestered() const;
-		time_t					getLastPing() const;
-		int						getClientId() const;
-		const std::string 		getMessageBuffer() const;
-		const std::string 		getNickname() const;
-		const std::string 		getUsername() const;
-		const std::string 		getRealname() const;
+		int					getSocket() const;
+		bool				isAuthenticated() const;
+		bool				isRegestered() const;
+		time_t				getLastPing() const;
+		int					getClientId() const;
+		const std::string& 	getMessageBuffer() const;
+		const std::string& 	getNickname() const;
+		std::string*		getNicknameAddr();
+		const std::string& 	getUsername() const;
+		const std::string& 	getRealname() const;
 
 		void	authenticate(const std::string& password);
 		void	beRegistered(); // may be done when both nick & user commands
@@ -61,7 +62,7 @@ class Client
 		// void`setRealname(const std::string& newRealname); // do we even use 
 				// this member? also I don't think it's meant to change
 		
-		void	readSocket();
+		void	readSocket(struct pollfd& pollresult);
 
 		// attempts to send a message, or if it is unable, add it to the
 		// send queue
