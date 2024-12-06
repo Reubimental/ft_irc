@@ -10,7 +10,7 @@ class Server; // defined in "Server.hpp"
 class Client
 {
 	private:
-		// Server&					_server;
+		Server&					_server;
 		struct pollfd&			_socket;
 		bool					_isAuthenticated;
 		bool					_isRegestered;
@@ -25,7 +25,7 @@ class Client
 		void	sendMessage(const std::string& message);
 
 	public:
-		Client(/*Server& server,*/ struct pollfd& socket);
+		Client(Server& server, struct pollfd& socket);
 		Client(const Client&);
 		~Client();
 

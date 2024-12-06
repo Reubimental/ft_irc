@@ -41,6 +41,11 @@
 #define ERR_NEEDMOREPARAMS(command)         (std::ostringstream << "461 " << command << " :You may not reregister").str()
 #define ERR_CHANOPRIVSNEEDED(channel)       (std::ostringstream << "482 " << channel << " :You're not channel operator").str()
 
+// MOTD
+#define RPL_MOTDSTART(msg)  (std::ostringstream << "375 :- " << msg).str()
+#define RPL_MOTD(msg)       (std::ostringstream << "372 :- " << msg).str()
+#define RPL_ENDOFMOTD(msg)  (std::ostringstream << "376 :End of /MOTD command").str()
+
 /*
 RPL_CHANNELMODEIS --    324 <channel> <mode> <mode params>
 RPL_NOTOPIC --          331 <channel> :No topic is set
