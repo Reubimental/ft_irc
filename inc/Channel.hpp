@@ -55,9 +55,6 @@ class Channel
 		void		setTopic(const std::string& topic);
 		std::string	getTopic() const;
 		/*   Modes   */
-		void	setMode(char mode);
-		void	unsetMode(char mode);
-		bool	hasMode(char mode) const;
 		bool	implementMode(char toggle, char mode);
 		bool	implementMode(char toggle, char mode, std::vector<std::string> variables);
 		/*   Passwords   */

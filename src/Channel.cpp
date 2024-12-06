@@ -139,20 +139,6 @@ std::string	Channel::getTopic() const
 	return (this->_channelTopic);
 }
 
-void	Channel::setMode(char mode)
-{
-}
-
-void	Channel::unsetMode(char mode)
-{
-	/*   unset the current MODE   */
-}
-
-bool	Channel::hasMode(char mode) const
-{
-	/*   check if the current mode is already set   */
-}
-
 bool	Channel::implementMode(char toggle, char mode)
 {
 	switch(mode)
