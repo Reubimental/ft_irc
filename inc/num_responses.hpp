@@ -8,6 +8,8 @@
 
 /* I hate iostreams >:( */
 
+#define ERR_UNKNOWNCOMMAND(command)         (std::ostringstream << "421 " << command << " :Unknown command").str()
+
 // topic
 #define RPL_NOTOPIC(channel)                (std::ostringstream << "331 " << channel << " :No topic is set").str()
 #define RPL_TOPIC(channel, topic)           (std::ostringstream << "332 " << channel << " :" << topic).str()
@@ -40,6 +42,11 @@
 #define ERR_NOTONCHANNEL(channel)           (std::ostringstream << "442 " << channel << " :You're not on that channel").str()
 #define ERR_NEEDMOREPARAMS(command)         (std::ostringstream << "461 " << command << " :You may not reregister").str()
 #define ERR_CHANOPRIVSNEEDED(channel)       (std::ostringstream << "482 " << channel << " :You're not channel operator").str()
+
+// MOTD
+#define RPL_MOTDSTART(msg)  (std::ostringstream << "375 :- " << msg).str()
+#define RPL_MOTD(msg)       (std::ostringstream << "372 :- " << msg).str()
+#define RPL_ENDOFMOTD(msg)  (std::ostringstream << "376 :End of /MOTD command").str()
 
 /*
 RPL_CHANNELMODEIS --    324 <channel> <mode> <mode params>

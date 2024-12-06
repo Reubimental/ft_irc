@@ -11,6 +11,7 @@ INC_DIR := inc/
 
 FILES := Channel \
 		 Client \
+		 Server \
 
 SRC := $(addsuffix .cpp, $(addprefix $(SRC_DIR), $(FILES)))
 OBJ := $(addsuffix .o, $(addprefix $(OBJ_DIR), $(FILES)))
