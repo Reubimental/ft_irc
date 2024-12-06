@@ -9,7 +9,8 @@ OBJ_DIR	:= obj/
 DEBUG_DIR := debug_obj/
 INC_DIR := inc/
 
-FILES := ft_irc
+FILES := ft_irc_test \
+		 Client \
 
 SRC := $(addsuffix .c, $(addprefix $(SRC_DIR), $(FILES)))
 OBJ := $(addsuffix .o, $(addprefix $(OBJ_DIR), $(FILES)))
