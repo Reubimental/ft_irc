@@ -144,7 +144,7 @@ void Client::readSocket()
 
     if (false /*a full message is obtained -- ends with either \n or \r*/)
         _server.doCommand(NULL, *this);
-        std::cout << "message recieved!" << std::endl;
+    std::cout << "message recieved!" << std::endl;
 }
 
 void    Client::queueMessage(const std::string& message)

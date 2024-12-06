@@ -18,7 +18,7 @@ private:
     struct pollfd*              _sockets;
     int                         _numSockets;
     std::string                 _password;
-    std::vector<std::string&>   _nicknames;
+    std::vector<std::string*>   _nicknames;
     std::vector<std::string>    _motd;
 
     void newClient(/* things? */);
