@@ -9,8 +9,8 @@
 static unsigned int numClients = 0;
 
 Client::Client(Server& server, struct pollfd& socket)
-    : _server(server)
-    , _socket(socket)
+    // : _server(server)
+    : _socket(socket)
     , _lastPing(time(NULL))
     , _clientId(++numClients)
 {
@@ -18,8 +18,8 @@ Client::Client(Server& server, struct pollfd& socket)
 }
 
 Client::Client(const Client& a)
-    : _server(a._server)
-    , _socket(a._socket)
+    // : _server(a._server)
+    : _socket(a._socket)
     , _isAuthenticated(a._isAuthenticated)
     , _isRegestered(a._isRegestered)
     , _lastPing(a._lastPing)
@@ -97,8 +97,11 @@ const std::string Client::getRealname() const
 
 void Client::authenticate(const std::string& password)
 {
-    if (!_isAuthenticated)
-        _isAuthenticated = _server.authenticate(password)
+    // if (!_isAuthenticated)
+    //     _isAuthenticated = _server.authenticate(password)
+    // else
+        // respod already registered
+        return ;
 }
 
 void Client::beRegistered()
@@ -114,12 +117,13 @@ void Client::ping()
 void Client::setRecieveBuffer(const std::string& newBuffer)
 {
     std::cout << "Setting message buffer -- did you mean to do this?" << std::endl;
-    _recieveBuffer
+    _recieveBuffer = newBuffer;
 }
 
 int Client::setNickname(const std::string& newNickname)
 {
-    if (server.nicknameAvailable(newNickname))
+//    if (_server.nicknameAvailable(newNickname))
+    if (true)
     {
         _nickname = newNickname;
         return (1);
@@ -136,6 +140,8 @@ void Client::readSocket()
     // read from _socket
 
     if (false /*a full message is obtained -- ends with either \n or \r*/)
+        // _server.do_command
+        std::cout << "message recieved!" << std::endl;
 }
 
 void    Client::queueMessage(const std::string& message)

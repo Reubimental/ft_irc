@@ -10,7 +10,7 @@ class Server; // defined in "Server.hpp"
 class Client
 {
 	private:
-		Server&					_server;
+		// Server&					_server;
 		struct pollfd&			_socket;
 		bool					_isAuthenticated;
 		bool					_isRegestered;
