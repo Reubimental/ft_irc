@@ -8,7 +8,7 @@
 
 static unsigned int numClients = 0;
 
-Client::Client(Server& server, struct pollfd& socket)
+Client::Client(/*Server& server,*/ struct pollfd& socket)
     // : _server(server)
     : _socket(socket)
     , _lastPing(time(NULL))
@@ -97,6 +97,7 @@ const std::string Client::getRealname() const
 
 void Client::authenticate(const std::string& password)
 {
+    (void)password;
     // if (!_isAuthenticated)
     //     _isAuthenticated = _server.authenticate(password)
     // else
@@ -177,4 +178,9 @@ void    Client::clearQueue()
         }
 
     }
+}
+
+void    Client::sendMessage(const std::string& message)
+{
+    (void)message;
 }

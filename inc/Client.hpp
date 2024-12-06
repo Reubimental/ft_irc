@@ -25,7 +25,7 @@ class Client
 		void	sendMessage(const std::string& message);
 
 	public:
-		Client(Server& server, struct pollfd& socket);
+		Client(/*Server& server,*/ struct pollfd& socket);
 		Client(const Client&);
 		~Client();
 
