@@ -4,8 +4,11 @@
 
 static unsigned int	channelID = 1;
 
-Channel::Channel(): _channelName("Channel " + std::to_string(channelID)), _channelId(channelID)
+Channel::Channel(): _channelId(channelID)
 {
+	std::stringstream ss;
+	ss << "Channel " << channelID;
+	_channelName = ss.str();
 	channelID++;
 	std::cout << "Channel of ID " << getChannelId() << " has been initiated." << std::endl;
 }
@@ -73,14 +76,14 @@ bool	Channel::checkOp(std::string nickname, int change)
 	return (false);
 }
 
-void	Channel::printMessage(const std::string& message, const std::string& sender)
+void	Channel::printMessage(const std::string& message, const std::string& targetName)
 {
-	std::cout << sender << ": " << message << std::endl;
+	std::cout << targetName << ": " << message << std::endl;
 }
 
-void	Channel::broadcastMessage(const std::string& message, const std::string& sender)
+void	Channel::broadcastMessage(const std::string& message, const std::string& targetName)
 {
-	std::cout << "Broadcast From " << sender << ": " << message << std::endl;
+	std::cout << "Broadcast From " << targetName << ": " << message << std::endl;
 }
 
 bool	Channel::isFull() const
@@ -99,6 +102,12 @@ void	Channel::addClient(const Client& client)
 		return ;
 	}
 	std::cout << "Sorry, Channel \"" << this->getChannelName() << "\" is full." << this->getUserCount() << "/" << this->getUserLimit() << std::endl;
+}
+
+void	addInvite(const Client& client)
+{
+	this->_invited.push_back(client);
+	return ;
 }
 
 void	Channel::removeClient(std::string client)
@@ -251,9 +260,14 @@ unsigned int	Channel::findIdByNick(std::string nick)
 	std::cout << "Nickname does not exist in database." << std::endl;
 }
 
+bool	Channel::checkInviteOnly()
+{
+	return (this->_inviteOnly);
+}
+
 //////////////////////////////////////*   SERVER STUFF   *//////////////////////////////////////
 
-int	Channel::handleCommands(std::string input)
+int	Channel::handleCommands(std::string input, Client& client)
 {
 	std::istringstream iss(input);
 	std::vector<std::string> tokens;
@@ -272,17 +286,20 @@ int	Channel::handleCommands(std::string input)
 	while (iss >> token)
 	{
 		if (token[0] == ':')
+		{
 			std::getline(iss >> std::ws, token);
+			break ;
+		}
 		else
 			tokens.push_back(token);
 	}
 	if (tokens[0] == "KICK")
 	{
-		this->kickCommand(tokens);
+		this->kickCommand(tokens, client);
 	}
 	else if (tokens[0] == "INVITE")
 	{
-
+		this->inviteCommand(tokens, client);
 	}
 	else if (tokens[0] == "TOPIC")
 	{
@@ -325,20 +342,85 @@ int	Channel::handleCommands(std::string input)
 		
 	}
 }
-
-void	Server::kickCommand(std::vector<std::string> params)
+/*
+			ERR_NEEDMOREPARAMS*              ERR_NOSUCHCHANNEL*
+           ERR_BADCHANMASK                 ERR_CHANOPRIVSNEEDED
+           ERR_NOTONCHANNEL
+*/
+void	Server::kickCommand(std::vector<std::string> tokens, Client& client)
 {
 	Channel* channel;
+
 	if (tokens.size() < 3)
+	{
 		client.sendMessage(ERR_NEEDMOREPARAMS("KICK"));
+		return ;
+	}
 	channel = this->getChannelByName(tokens[1]);
 	if (!channel)
+	{
 		client.sendMessage(ERR_NOSUCHCHANNEL(tokens[1]));
+		return ;
+	}
+	if (!channel.checkOp(client.getNickname()))
+	{
+		client.sendMessage(ERR_CHANOPRIVSNEEDED(tokens[1]));
+		return ;
+	}
+	if (!channel->checkClient(client.getNickname()))
+	{
+		client.sendMessage(ERR_NOTONCHANNEL(tokens[1]));
+		return ;
+	}
 	channel.removeClient(tokens[2]);
 	std::cout << "User " << tokens[2] << " has been kicked from channel " << tokens[1] << "." << std::endl;
-		if (tokens[3])
-			std::cout << "Reason: " << tokens[3] << std::endl;
+	if (tokens[3])
+		std::cout << "Reason: " << tokens[3] << std::endl;
 }
+
+/*
+		ERR_NEEDMOREPARAMS*              ERR_NOSUCHNICK*
+        ERR_NOTONCHANNEL                ERR_USERONCHANNEL
+        ERR_CHANOPRIVSNEEDED
+        RPL_INVITING                    RPL_AWAY
+*/
+void	Server::inviteCommand(std::vector<std::string> tokens, Client& client)
+{
+	Channel*	channel;
+	std::string	targetName = tokens[1];
+	std::string	channelName = tokens[2];
+	Client*		target = this->getClientByNuck(targetName);
+
+	if (tokens.size() < 3)
+	{
+		client.sendMessage(ERR_NEEDMOREPARAMS("INVITE"))
+		return ;
+	}
+	if (!target)
+	{
+		client.sendMessage(ERR_NOSUCHNICK);
+		return ;
+	}
+	if (!channel.checkClient(client.getNickname()))
+	{
+		client.sendMessage(ERR_NOTONCHANNEL(channel->getChannelName()));
+		return ;
+	}
+	if (channel.checkClient(targetName))
+	{
+		client.sendMessage(ERR_USERONCHANNEL(targetName, channelName));
+		return ;
+	}
+	if (channel.checkInviteOnly() && !channel.checkOp(client.getNickname()))
+	{
+		client.sendMessage(ERR_CHANOPRIVSNEEDED(channelName));
+		return ;
+	}
+	target->sendMessage(RPL_INVITING(channelName, targetName));
+	client.sendMessage(RPL_INVITING(channelName, targetName));
+	channel.
+}
+
 /*
 	The token index that is multi-string for each:
 		KICK <3>

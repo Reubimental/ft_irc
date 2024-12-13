@@ -32,6 +32,7 @@ class Channel
 	private:
 		std::vector<Client>		_clients;
 		std::vector<Client>		_operators;
+		std::vector<int>		_invited;
 		std::queue<std::string>	_messageBuffer;
         unsigned int			_channelId;
 		std::string				_channelName;
@@ -61,6 +62,7 @@ class Channel
 		/*   Client Manipulation   */
 		bool	isFull() const;
 		void	addClient(const Client& client);
+		void	addInvite(const Client& client);
 		void	removeClient(std::string client);
 		void	setUserLimit(int limit);
 		int		getUserCount() const;
@@ -69,6 +71,7 @@ class Channel
 		void		setTopic(const std::string& topic);
 		std::string	getTopic() const;
 		/*   Modes   */
+		bool	checkInviteOnly();
 		bool	implementMode(char toggle, char mode);
 		bool	implementMode(char toggle, char mode, std::vector<std::string> variables);
 		/*   Passwords   */
