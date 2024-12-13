@@ -1,6 +1,7 @@
 
 #include "ft_irc.hpp"
 #include "Server.hpp"
+#include "num_responses.hpp"
 #include <stdexcept>
 #include <poll.h>
 #include <arpa/inet.h>
@@ -164,11 +165,18 @@ void    Server::privmsgCommand(t_message message, Client& sender)
         if ((*param)[0] == '#')
         {
             // get channel, send privmsg
-            getChannelByName(param->substr(1));
+            Channel* chan = getChannelByName(param->substr(1));
+            if (!chan)
+                sender.queueMessage(ERR_CANNOTSENDTOCHAN(*param));
+            // send message to channel
         }
         else
         {
-            // get user, send privmsg
+            Client* client = getClientByNick(*param);
+            if (!client)
+                sender.queueMessage(ERR_NOSUCHNICK);
+            else
+                client->queueMessage(message);
         }
     }
 }

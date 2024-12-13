@@ -1,6 +1,9 @@
 
+#pragma once
+
 #include "Client.hpp"
 #include "Channel.hpp"
+#include "ft_irc.hpp"
 #include <vector>
 
 /* temparary line */

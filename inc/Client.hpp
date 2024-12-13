@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "ft_irc.hpp"
 #include <poll.h>
 #include <string>
 #include <queue>
@@ -75,4 +76,5 @@ class Client
 
 		// queues a message to send
 		void	queueMessage(const std::string&);
+		void	queueMessage(t_message message);
 };

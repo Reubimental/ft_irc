@@ -44,7 +44,8 @@ $(NAME)_debug: $(DEBUG_OBJ) $(FLIBS)
 -include $(DEP)
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.cpp | $(OBJ_DIR:/=)
-	$(CXX) $(CXXFALGS) $(IFLAGS) -c $< -o $@
+	@printf "$(PREFIX) $(C_GRAY)COMPILING $(C_CYAN)$@$(NC)\n"
+	@$(CXX) $(CXXFALGS) $(IFLAGS) -c $< -o $@
 
 $(OBJ_DIR:/=):
 	@mkdir $(OBJ_DIR)

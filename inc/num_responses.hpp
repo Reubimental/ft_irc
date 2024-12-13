@@ -5,48 +5,51 @@
 
 #pragma once
 #include <sstream>
+#include <ostream>
 
 /* I hate iostreams >:( */
 
-#define ERR_UNKNOWNCOMMAND(command)         (std::ostringstream << "421 " << command << " :Unknown command").str()
+#define IRC_NUMREPLY(reply) ((std::ostringstream&)(std::ostringstream("").flush() << reply)).str()
+
+#define ERR_UNKNOWNCOMMAND(command)         IRC_NUMREPLY("421 " << command << " :Unknown command")
 
 // topic
-#define RPL_NOTOPIC(channel)                (std::ostringstream << "331 " << channel << " :No topic is set").str()
-#define RPL_TOPIC(channel, topic)           (std::ostringstream << "332 " << channel << " :" << topic).str()
+#define RPL_NOTOPIC(channel)                IRC_NUMREPLY("331 " << channel << " :No topic is set")
+#define RPL_TOPIC(channel, topic)           IRC_NUMREPLY("332 " << channel << " :" << topic)
 
 // invites
-#define RPL_INVITING(channel, nick)         (std::ostringstream << "341 " << channel << " " << nick).str()
-#define ERR_USERONCHANNEL(user, channel)    (std::ostringstream << "443 " << user << " " << channel << " :User already on channel").str()
+#define RPL_INVITING(channel, nick)         IRC_NUMREPLY("341 " << channel << " " << nick)
+#define ERR_USERONCHANNEL(user, channel)    IRC_NUMREPLY("443 " << user << " " << channel << " :User already on channel")
 
 // regestering
 #define ERR_NOSUCHNICK                      std::string("401 :No such nickname/channel")
 #define ERR_NONICKNAMEGIVEN                 std::string("431 :No nickname given")
-#define ERR_ERRONEUSNICKNAME(nick)          (std::ostringstream << "432 " << nick << " :Erroneus nickname").str()
-#define ERR_NICKNAMEINUSE(nick)             (std::ostringstream << "433 " << nick << " :Nickname is already in use").str()
-#define ERR_NICKCOLLISION(nick)             (std::ostringstream << "436 " << nick << " :Nickname collision KILL").str()
+#define ERR_ERRONEUSNICKNAME(nick)          IRC_NUMREPLY("432 " << nick << " :Erroneus nickname")
+#define ERR_NICKNAMEINUSE(nick)             IRC_NUMREPLY("433 " << nick << " :Nickname is already in use")
+#define ERR_NICKCOLLISION(nick)             IRC_NUMREPLY("436 " << nick << " :Nickname collision KILL")
 #define ERR_ALREADYREGISTRED                std::string("462 :You may not register")
 
 // modes
-#define RPL_CHANNELMODEIS(channel, mode, mode_params)   (std::ostringstream << "324 " << channel << " " << mode << " " << mode_params).str()
-#define ERR_KEYSET(channel)                 (std::ostringstream << "467 " << channel << " :Channel key already set").str()
-#define ERR_CHANNELISFULL(channel)          (std::ostringstream << "471 " << channel << " :Cannot join channel (+l)").str()
-#define ERR_UNKNOWNMODE(chara)              (std::ostringstream << "472 " << chara << " :is unknown mode char to me").str()
-#define ERR_INVITEONLYCHAN(channel)         (std::ostringstream << "473 " << channel << " :Cannot join channel (+i)").str()
-#define ERR_BADCHANNELKEY(channel)          (std::ostringstream << "475 " << channel << " :Cannot join channel (+k)").str()
+#define RPL_CHANNELMODEIS(channel, mode, mode_params)   IRC_NUMREPLY("324 " << channel << " " << mode << " " << mode_params)
+#define ERR_KEYSET(channel)                 IRC_NUMREPLY("467 " << channel << " :Channel key already set")
+#define ERR_CHANNELISFULL(channel)          IRC_NUMREPLY("471 " << channel << " :Cannot join channel (+l)")
+#define ERR_UNKNOWNMODE(chara)              IRC_NUMREPLY("472 " << chara << " :is unknown mode char to me")
+#define ERR_INVITEONLYCHAN(channel)         IRC_NUMREPLY("473 " << channel << " :Cannot join channel (+i)")
+#define ERR_BADCHANNELKEY(channel)          IRC_NUMREPLY("475 " << channel << " :Cannot join channel (+k)")
 
 // general
-#define ERR_NOSUCHCHANNEL(channel)          (std::ostringstream << "403 " << channel << " :No such channel").str()
-#define ERR_CANNOTSENDTOCHAN(channel)       (std::ostringstream << "404 " << channel << " :Cannot send to channel").str()
-#define ERR_NORECIPIENT(command)            (std::ostringstream << "411 :No recipient given " << command).str()
+#define ERR_NOSUCHCHANNEL(channel)          IRC_NUMREPLY("403 " << channel << " :No such channel")
+#define ERR_CANNOTSENDTOCHAN(channel)       IRC_NUMREPLY("404 " << channel << " :Cannot send to channel")
+#define ERR_NORECIPIENT(command)            IRC_NUMREPLY("411 :No recipient given " << command)
 #define ERR_NOTEXTTOSEND                    std::string("412 :No text to send")
-#define ERR_NOTONCHANNEL(channel)           (std::ostringstream << "442 " << channel << " :You're not on that channel").str()
-#define ERR_NEEDMOREPARAMS(command)         (std::ostringstream << "461 " << command << " :You may not reregister").str()
-#define ERR_CHANOPRIVSNEEDED(channel)       (std::ostringstream << "482 " << channel << " :You're not channel operator").str()
+#define ERR_NOTONCHANNEL(channel)           IRC_NUMREPLY("442 " << channel << " :You're not on that channel")
+#define ERR_NEEDMOREPARAMS(command)         IRC_NUMREPLY("461 " << command << " :You may not reregister")
+#define ERR_CHANOPRIVSNEEDED(channel)       IRC_NUMREPLY("482 " << channel << " :You're not channel operator")
 
 // MOTD
-#define RPL_MOTDSTART(msg)  (std::ostringstream << "375 :- " << msg).str()
-#define RPL_MOTD(msg)       (std::ostringstream << "372 :- " << msg).str()
-#define RPL_ENDOFMOTD(msg)  (std::ostringstream << "376 :End of /MOTD command").str()
+#define RPL_MOTDSTART(msg)  IRC_NUMREPLY("375 :- " << msg)
+#define RPL_MOTD(msg)       IRC_NUMREPLY("372 :- " << msg)
+#define RPL_ENDOFMOTD(msg)  IRC_NUMREPLY("376 :End of /MOTD command")
 
 /*
 RPL_CHANNELMODEIS --    324 <channel> <mode> <mode params>
