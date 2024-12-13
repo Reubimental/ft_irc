@@ -1,4 +1,5 @@
 
+#include "ft_irc.hpp"
 #include "Server.hpp"
 #include <stdexcept>
 #include <poll.h>
@@ -121,4 +122,65 @@ Client* Server::getClientByNick(const std::string& nick)
             return &(*it);
     }
     return NULL;
+}
+
+void    Server::removeSocket(int fd)
+{
+    for (std::vector<struct pollfd>::iterator it = _sockets.begin();
+            it != _sockets.end(); ++it)
+    {
+        if (it->fd == fd)
+            _sockets.erase(it);
+    }
+}
+
+void   Server::removeClient(Client& client)
+{
+    // remove from all channels
+    for (std::vector<Channel>::iterator it = _channels.begin();
+            it != _channels.end(); ++it)
+        it->removeClient(client.getNickname());
+
+    // remove the socket
+    removeSocket(client.getSocket());
+
+    // remove the client from _clients
+    for (std::vector<Client>::iterator it = _clients.begin();
+            it != _clients.end(); ++it)
+    {
+        if (&(*it) == &client)
+            _clients.erase(it);
+    }
+}
+
+void    Server::privmsgCommand(t_message message, Client& sender)
+{
+    message.prefix = sender.getNickname();
+
+    // loop through parameters, skipping the first one
+    for (std::vector<std::string>::iterator param = message.params.begin() + 1;
+            param != message.params.end(); ++param)
+    {
+        if ((*param)[0] == '#')
+        {
+            // get channel, send privmsg
+            getChannelByName(param->substr(1));
+        }
+        else
+        {
+            // get user, send privmsg
+        }
+    }
+}
+
+void    Server::quitCommand(t_message message, Client& sender)
+{
+    (void)message;
+    removeClient(sender);
+}
+
+void    Server::pongCommand(t_message message, Client& sender)
+{
+    (void)message;
+    sender.pongCommand();
 }

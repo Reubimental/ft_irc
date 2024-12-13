@@ -13,9 +13,11 @@ private:
     Server& operator=(const Server&);
 
     void _Server(int port);
+    void removeSocket(int fd);
+    void removeClient(Client& client);
     
     int                         _sockfd;
-    std::vector<Client>         _clients;
+    std::vector<Client>         _clients; // needs to change to vector<Client*>
     std::vector<Channel>        _channels;
     std::vector<struct pollfd>  _sockets;
     int                         _numSockets;
@@ -39,4 +41,35 @@ public:
     bool nicknameAvailable(const std::string& nick);
     Channel* getChannelByName(const std::string& channel);
     Client* getClientByNick(const std::string& nick);
+
+    // SERVER COMMANDS
+    void    passCommand     (t_message message, Client& sender);
+    void    nickCommand     (t_message message, Client& sender);
+    void    userCommand     (t_message message, Client& sender);
+    void    joinCommand     (t_message message, Client& sender);
+    void    privmsgCommand  (t_message message, Client& sender);
+    void    quitCommand     (t_message message, Client& sender);
+
+    // CHANNEL COMMANDS
+    void    kickCommand     (t_message message, Client& sender);
+    void    inviteCommand   (t_message message, Client& sender);
+    void    topicCommand    (t_message message, Client& sender);
+    void    modeCommand     (t_message message, Client& sender);
+    void    partCommand     (t_message message, Client& sender);
+
+    // literally nothing command
+    void    pongCommand     (t_message message, Client& sender);
 };
+
+// { "KICK",
+// "INVITE",
+// "TOPIC",
+// "MODE",
+// "PASS",
+// "NICK",
+// "USER",
+// "JOIN",
+// "PRIVMSG",
+// "PONG",
+// "PART",
+// "QUIT" };

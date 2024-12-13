@@ -19,12 +19,12 @@
 #define ERR_USERONCHANNEL(user, channel)    (std::ostringstream << "443 " << user << " " << channel << " :User already on channel").str()
 
 // regestering
-#define ERR_NOSUCHNICK                      (std::ostringstream << "401 :No such nickname/channel").str()
-#define ERR_NONICKNAMEGIVEN                 (std::ostringstream << "431 :No nickname given").str()
+#define ERR_NOSUCHNICK                      std::string("401 :No such nickname/channel")
+#define ERR_NONICKNAMEGIVEN                 std::string("431 :No nickname given")
 #define ERR_ERRONEUSNICKNAME(nick)          (std::ostringstream << "432 " << nick << " :Erroneus nickname").str()
 #define ERR_NICKNAMEINUSE(nick)             (std::ostringstream << "433 " << nick << " :Nickname is already in use").str()
 #define ERR_NICKCOLLISION(nick)             (std::ostringstream << "436 " << nick << " :Nickname collision KILL").str()
-#define ERR_ALREADYREGISTRED                (std::ostringstream << "462 :No recipient given " << command).str()
+#define ERR_ALREADYREGISTRED                std::string("462 :You may not register")
 
 // modes
 #define RPL_CHANNELMODEIS(channel, mode, mode_params)   (std::ostringstream << "324 " << channel << " " << mode << " " << mode_params).str()
@@ -38,7 +38,7 @@
 #define ERR_NOSUCHCHANNEL(channel)          (std::ostringstream << "403 " << channel << " :No such channel").str()
 #define ERR_CANNOTSENDTOCHAN(channel)       (std::ostringstream << "404 " << channel << " :Cannot send to channel").str()
 #define ERR_NORECIPIENT(command)            (std::ostringstream << "411 :No recipient given " << command).str()
-#define ERR_NOTEXTTOSEND                    (std::ostringstream << "412 :No text to send").str()
+#define ERR_NOTEXTTOSEND                    std::string("412 :No text to send")
 #define ERR_NOTONCHANNEL(channel)           (std::ostringstream << "442 " << channel << " :You're not on that channel").str()
 #define ERR_NEEDMOREPARAMS(command)         (std::ostringstream << "461 " << command << " :You may not reregister").str()
 #define ERR_CHANOPRIVSNEEDED(channel)       (std::ostringstream << "482 " << channel << " :You're not channel operator").str()
