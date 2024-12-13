@@ -44,6 +44,7 @@ public:
     bool nicknameAvailable(const std::string& nick);
     Channel* getChannelByName(const std::string& channel);
     Client* getClientByNick(const std::string& nick);
+    unsigned int	findIdByNick(std::string nick);
 
     // SERVER COMMANDS
     void    passCommand     (t_message message, Client& sender);
