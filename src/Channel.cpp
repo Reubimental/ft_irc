@@ -83,7 +83,10 @@ void	Channel::printMessage(const std::string& message, const std::string& target
 
 void	Channel::broadcastMessage(const std::string& message, const std::string& targetName)
 {
-	std::cout << "Broadcast From " << targetName << ": " << message << std::endl;
+	for (std::vector<Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		it.queueMessage(message);
+	}
 }
 
 bool	Channel::isFull() const
@@ -104,9 +107,9 @@ void	Channel::addClient(const Client& client)
 	std::cout << "Sorry, Channel \"" << this->getChannelName() << "\" is full." << this->getUserCount() << "/" << this->getUserLimit() << std::endl;
 }
 
-void	addInvite(const Client& client)
+void	Channel::addInvite(const int clientId)
 {
-	this->_invited.push_back(client);
+	this->_invited.push_back(clientId);
 	return ;
 }
 
@@ -258,6 +261,7 @@ unsigned int	Channel::findIdByNick(std::string nick)
 			return (_clients.getClientId());
 	}
 	std::cout << "Nickname does not exist in database." << std::endl;
+	return (NULL);
 }
 
 bool	Channel::checkInviteOnly()
@@ -341,6 +345,10 @@ int	Channel::handleCommands(std::string input, Client& client)
 	{
 		
 	}
+	else
+	{
+		ERR_UNKNOWNCOMMAND(tokens[0]);
+	}
 }
 /*
 			ERR_NEEDMOREPARAMS*              ERR_NOSUCHCHANNEL*
@@ -353,23 +361,23 @@ void	Server::kickCommand(std::vector<std::string> tokens, Client& client)
 
 	if (tokens.size() < 3)
 	{
-		client.sendMessage(ERR_NEEDMOREPARAMS("KICK"));
+		client.queueMessage(ERR_NEEDMOREPARAMS("KICK"));
 		return ;
 	}
 	channel = this->getChannelByName(tokens[1]);
 	if (!channel)
 	{
-		client.sendMessage(ERR_NOSUCHCHANNEL(tokens[1]));
+		client.queueMessage(ERR_NOSUCHCHANNEL(tokens[1]));
 		return ;
 	}
 	if (!channel.checkOp(client.getNickname()))
 	{
-		client.sendMessage(ERR_CHANOPRIVSNEEDED(tokens[1]));
+		client.queueMessage(ERR_CHANOPRIVSNEEDED(tokens[1]));
 		return ;
 	}
 	if (!channel->checkClient(client.getNickname()))
 	{
-		client.sendMessage(ERR_NOTONCHANNEL(tokens[1]));
+		client.queueMessage(ERR_NOTONCHANNEL(tokens[1]));
 		return ;
 	}
 	channel.removeClient(tokens[2]);
@@ -393,32 +401,32 @@ void	Server::inviteCommand(std::vector<std::string> tokens, Client& client)
 
 	if (tokens.size() < 3)
 	{
-		client.sendMessage(ERR_NEEDMOREPARAMS("INVITE"))
+		client.queueMessage(ERR_NEEDMOREPARAMS("INVITE"))
 		return ;
 	}
 	if (!target)
 	{
-		client.sendMessage(ERR_NOSUCHNICK);
+		client.queueMessage(ERR_NOSUCHNICK);
 		return ;
 	}
 	if (!channel.checkClient(client.getNickname()))
 	{
-		client.sendMessage(ERR_NOTONCHANNEL(channel->getChannelName()));
+		client.queueMessage(ERR_NOTONCHANNEL(channel->getChannelName()));
 		return ;
 	}
 	if (channel.checkClient(targetName))
 	{
-		client.sendMessage(ERR_USERONCHANNEL(targetName, channelName));
+		client.queueMessage(ERR_USERONCHANNEL(targetName, channelName));
 		return ;
 	}
 	if (channel.checkInviteOnly() && !channel.checkOp(client.getNickname()))
 	{
-		client.sendMessage(ERR_CHANOPRIVSNEEDED(channelName));
+		client.queueMessage(ERR_CHANOPRIVSNEEDED(channelName));
 		return ;
 	}
-	target->sendMessage(RPL_INVITING(channelName, targetName));
-	client.sendMessage(RPL_INVITING(channelName, targetName));
-	channel.
+	target->queueMessage(RPL_INVITING(channelName, targetName));
+	client.queueMessage(RPL_INVITING(channelName, targetName));
+	channel.addInvite(this->findIdByNick(targetName));
 }
 
 /*

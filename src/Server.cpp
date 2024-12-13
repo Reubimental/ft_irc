@@ -124,6 +124,18 @@ Client* Server::getClientByNick(const std::string& nick)
     return NULL;
 }
 
+unsigned int	Server::findIdByNick(std::string nick)
+{
+	int	ID;
+	for (std::vector<Client>::const_iterator it = this->_clients.begin(); it != this->_clients.end(); it++)
+	{
+		if (nick == _clients.getNickname())
+			return (_clients.getClientId());
+	}
+	std::cout << "Nickname does not exist in database." << std::endl;
+    return NULL;
+}
+
 void    Server::removeSocket(int fd)
 {
     for (std::vector<struct pollfd>::iterator it = _sockets.begin();

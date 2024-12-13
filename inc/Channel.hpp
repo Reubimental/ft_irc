@@ -62,7 +62,7 @@ class Channel
 		/*   Client Manipulation   */
 		bool	isFull() const;
 		void	addClient(const Client& client);
-		void	addInvite(const Client& client);
+		void	addInvite(const int clientId);
 		void	removeClient(std::string client);
 		void	setUserLimit(int limit);
 		int		getUserCount() const;
