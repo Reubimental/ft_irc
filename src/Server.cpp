@@ -204,3 +204,170 @@ void    Server::pongCommand(t_message message, Client& sender)
     (void)message;
     sender.pongCommand();
 }
+
+int	Channel::handleCommands(std::string input, Client& client)
+{
+	std::istringstream iss(input);
+	std::vector<std::string> tokens;
+	std::vector<std::string>::iterator it;
+	std::string token;
+	std::string	prefix;
+
+	if (iss >> token)
+	{
+		if (token[0] == ':')
+			prefix = token;
+		else
+			tokens.push_back(token);
+	}
+
+	while (iss >> token)
+	{
+		if (token[0] == ':')
+		{
+			std::getline(iss >> std::ws, token);
+			break ;
+		}
+		else
+			tokens.push_back(token);
+	}
+	if (tokens[0] == "KICK")
+	{
+		this->kickCommand(tokens, client);
+	}
+	else if (tokens[0] == "INVITE")
+	{
+		this->inviteCommand(tokens, client);
+	}
+	else if (tokens[0] == "TOPIC")
+	{
+		
+	}
+	else if (tokens[0] == "MODE")
+	{
+		
+	}
+	else if (tokens[0] == "PASS")
+	{
+		
+	}
+	else if (tokens[0] == "NICK")
+	{
+		
+	}
+	else if (tokens[0] == "USER")
+	{
+		
+	}
+	else if (tokens[0] == "JOIN")
+	{
+		
+	}
+	else if (tokens[0] == "PRIVMSG")
+	{
+		
+	}
+	else if (tokens[0] == "PONG") 
+	{
+		
+	}
+	else if (tokens[0] == "PART")
+	{
+		
+	}
+	else if (tokens[0] == "QUIT")
+	{
+		
+	}
+	else
+	{
+		ERR_UNKNOWNCOMMAND(tokens[0]);
+	}
+}
+/*
+			ERR_NEEDMOREPARAMS*              ERR_NOSUCHCHANNEL*
+           ERR_BADCHANMASK                 ERR_CHANOPRIVSNEEDED
+           ERR_NOTONCHANNEL
+*/
+void	Server::kickCommand(std::vector<std::string> tokens, Client& client)
+{
+	Channel* channel;
+
+	if (tokens.size() < 3)
+	{
+		client.queueMessage(ERR_NEEDMOREPARAMS("KICK"));
+		return ;
+	}
+	channel = this->getChannelByName(tokens[1]);
+	if (!channel)
+	{
+		client.queueMessage(ERR_NOSUCHCHANNEL(tokens[1]));
+		return ;
+	}
+	if (!channel.checkOp(client.getNickname()))
+	{
+		client.queueMessage(ERR_CHANOPRIVSNEEDED(tokens[1]));
+		return ;
+	}
+	if (!channel->checkClient(client.getNickname()))
+	{
+		client.queueMessage(ERR_NOTONCHANNEL(tokens[1]));
+		return ;
+	}
+	channel.removeClient(tokens[2]);
+	std::cout << "User " << tokens[2] << " has been kicked from channel " << tokens[1] << "." << std::endl;
+	if (tokens[3])
+		std::cout << "Reason: " << tokens[3] << std::endl;
+}
+
+/*
+		ERR_NEEDMOREPARAMS*              ERR_NOSUCHNICK*
+        ERR_NOTONCHANNEL                ERR_USERONCHANNEL
+        ERR_CHANOPRIVSNEEDED
+        RPL_INVITING                    RPL_AWAY
+*/
+void	Server::inviteCommand(std::vector<std::string> tokens, Client& client)
+{
+	Channel*	channel;
+	std::string	targetName = tokens[1];
+	std::string	channelName = tokens[2];
+	Client*		target = this->getClientByNuck(targetName);
+
+	if (tokens.size() < 3)
+	{
+		client.queueMessage(ERR_NEEDMOREPARAMS("INVITE"))
+		return ;
+	}
+	if (!target)
+	{
+		client.queueMessage(ERR_NOSUCHNICK);
+		return ;
+	}
+	if (!channel.checkClient(client.getNickname()))
+	{
+		client.queueMessage(ERR_NOTONCHANNEL(channel->getChannelName()));
+		return ;
+	}
+	if (channel.checkClient(targetName))
+	{
+		client.queueMessage(ERR_USERONCHANNEL(targetName, channelName));
+		return ;
+	}
+	if (channel.checkInviteOnly() && !channel.checkOp(client.getNickname()))
+	{
+		client.queueMessage(ERR_CHANOPRIVSNEEDED(channelName));
+		return ;
+	}
+	target->queueMessage(RPL_INVITING(channelName, targetName));
+	client.queueMessage(RPL_INVITING(channelName, targetName));
+	channel.addInvite(this->findIdByNick(targetName));
+}
+
+/*
+	The token index that is multi-string for each:
+		KICK <3>
+		TOPIC <2>
+		USER <4>
+		PRIVMSG <2>
+		QUIT <1>
+*/
