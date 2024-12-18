@@ -121,14 +121,13 @@ Client* Server::getClientByNick(const std::string& nick)
 
 unsigned int	Server::findIdByNick(std::string nick)
 {
-	int	ID;
 	for (std::vector<Client>::const_iterator it = this->_clients.begin(); it != this->_clients.end(); it++)
 	{
-		if (nick == _clients.getNickname())
-			return (_clients.getClientId());
+		if (nick == it->getNickname())
+			return (it->getClientId());
 	}
 	std::cout << "Nickname does not exist in database." << std::endl;
-    return NULL;
+    return 0;
 }
 
 void    Server::removeSocket(int fd)
@@ -199,7 +198,7 @@ void    Server::pongCommand(t_message message, Client& sender)
     sender.pongCommand();
 }
 
-int	Server::handleCommands(std::string input, Client& client)
+void	Server::handleCommands(std::string input, Client& client)
 {
 	std::istringstream iss(input);
 	std::vector<std::string>::iterator it;
@@ -297,7 +296,7 @@ void	Server::kickCommand(t_message message, Client& sender) // KICK <#channel> <
 		sender.queueMessage(ERR_NOSUCHCHANNEL(message.params[1]));
 		return ;
 	}
-	if (!channel.checkOp(sender.getNickname()))
+	if (!channel->checkOp(sender.getNickname(), 0))
 	{
 		sender.queueMessage(ERR_CHANOPRIVSNEEDED(message.params[1]));
 		return ;
@@ -307,9 +306,9 @@ void	Server::kickCommand(t_message message, Client& sender) // KICK <#channel> <
 		sender.queueMessage(ERR_NOTONCHANNEL(message.params[1]));
 		return ;
 	}
-	channel.removeClient(message.params[2]);
+	channel->removeClient(message.params[2]);
 	std::cout << "User " << message.params[2] << " has been kicked from channel " << message.params[1] << "." << std::endl;
-	if (message.suffix)
+	if (message.suffix.size() > 0)
 		std::cout << "Reason: " << message.suffix << std::endl;
 }
 
@@ -328,7 +327,7 @@ void	Server::inviteCommand(t_message message, Client& sender) // INVITE <nicknam
 
 	if (message.params.size() < 3)
 	{
-		sender.queueMessage(ERR_NEEDMOREPARAMS("INVITE"))
+		sender.queueMessage(ERR_NEEDMOREPARAMS("INVITE"));
 		return ;
 	}
 	if (!target)
@@ -347,14 +346,14 @@ void	Server::inviteCommand(t_message message, Client& sender) // INVITE <nicknam
 		sender.queueMessage(ERR_USERONCHANNEL(targetName, channelName));
 		return ;
 	}
-	if (channel.checkInviteOnly() && !channel.checkOp(sender.getNickname()))
+	if (channel->checkInviteOnly() && !channel->checkOp(sender.getNickname(), 0))
 	{
 		sender.queueMessage(ERR_CHANOPRIVSNEEDED(channelName));
 		return ;
 	}
 	target->queueMessage(RPL_INVITING(channelName, targetName));
 	sender.queueMessage(RPL_INVITING(channelName, targetName));
-	channel.addInvite(this->findIdByNick(targetName));
+	channel->addInvite(this->findIdByNick(targetName));
 }
 
 void	Server::topicCommand(t_message message, Client& sender) // TOPIC <#channel> [<topic>]
@@ -367,15 +366,15 @@ void	Server::topicCommand(t_message message, Client& sender) // TOPIC <#channel>
 		sender.queueMessage(ERR_NEEDMOREPARAMS("TOPIC"));
 		return ;
 	}
-	channel = this->findChannelByName(channelName);
-	if (!channel || !channel->checkClient(sender.getNickname))
+	channel = this->getChannelByName(channelName);
+	if (!channel || !channel->checkClient(sender.getNickname()))
 	{
 		sender.queueMessage(ERR_NOTONCHANNEL(channel->getChannelName()));
 		return ;
 	}
-	if (!message.suffix)
+	if (message.suffix.size() == 0)
 	{
-		if (channel->getTopic)
+		if (channel->getTopic().size() > 0)
 		{
 			sender.queueMessage(RPL_TOPIC(channel->getChannelName(), channel->getTopic()));
 			return ;
@@ -386,7 +385,7 @@ void	Server::topicCommand(t_message message, Client& sender) // TOPIC <#channel>
 			return ;
 		}
 	}
-	if (channel->getTopicOpAccess() && !channel->checkOp(sender.getNickname))
+	if (channel->getTopicOpAccess() && !channel->checkOp(sender.getNickname(), 0))
 	{
 		sender.queueMessage(ERR_CHANOPRIVSNEEDED(channel->getChannelName()));
 		return ;
@@ -413,7 +412,7 @@ void	Server::passCommand(t_message message, Client& sender)
 	}
 	if (message.params[0] == this->_password)
 	{
-		sender.authenticate(message.params[0]);
+		sender.authenticate();
 		return ;
 	}
 }

@@ -44,7 +44,7 @@ public:
 	Channel* getChannelByName(const std::string& channel);
 	Client* getClientByNick(const std::string& nick);
 	unsigned int	findIdByNick(std::string nick);
-	int		handleCommands(std::string input, Client& client);
+	void		handleCommands(std::string input, Client& client);
 
 	// SERVER COMMANDS
 	void    passCommand     (t_message message, Client& sender);

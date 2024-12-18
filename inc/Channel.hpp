@@ -24,12 +24,11 @@ class Channel
         unsigned int				_channelId;
 		std::string					_channelName;
 		std::string					_channelTopic;
-		unsigned int				_currentUserCount;
 		/*   MODES   */
 		bool		_inviteOnly;
 		bool		_topicOpAccess;
 		std::string	_password;
-		int			_userLimit;
+		unsigned int			_userLimit;
 
         void modeOperator(std::vector<std::__cxx11::string> &params, Client &sender, char toggle, char &mode);
 

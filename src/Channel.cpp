@@ -15,7 +15,7 @@ Channel::Channel(): _channelId(channelID)
 	std::cout << "Channel of ID " << getChannelId() << " has been initiated." << std::endl;
 }
 
-Channel::Channel(std::string channelName): _channelName(channelName), _channelId(channelID)
+Channel::Channel(std::string channelName): _channelId(channelID), _channelName(channelName)
 {
 	channelID++;
 	std::cout << "Channel of ID " << getChannelId() << " has been initiated." << std::endl;
@@ -86,6 +86,7 @@ void	Channel::printMessage(const std::string& message, const std::string& target
 
 void	Channel::broadcastMessage(const std::string& message, const std::string& targetName)
 {
+	(void)targetName;
 	for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		(*it)->queueMessage(message);
@@ -94,7 +95,7 @@ void	Channel::broadcastMessage(const std::string& message, const std::string& ta
 
 bool	Channel::isFull() const
 {
-	if (this->_currentUserCount >= this->_userLimit)
+	if (this->_clients.size() >= this->_userLimit)
 		return (true);
 	return (false);
 }
@@ -104,7 +105,6 @@ void	Channel::addClient(Client& client)
 	if (!this->isFull())
 	{
 		this->_clients.push_back(&client);
-		this->_currentUserCount++;
 		return ;
 	}
 	std::cout << "Sorry, Channel \"" << this->getChannelName() << "\" is full." << this->getUserCount() << "/" << this->getUserLimit() << std::endl;
@@ -124,7 +124,6 @@ void	Channel::removeClient(std::string client)
 		if ((*it)->getNickname() == client)
 		{
 			_clients.erase(it);
-			_currentUserCount--;
 			break ;
 		}
 	}
@@ -137,7 +136,7 @@ void	Channel::setUserLimit(int limit)
 
 int	Channel::getUserCount() const
 {
-	return (this->_currentUserCount);
+	return (this->_clients.size());
 }
 
 int	Channel::getUserLimit() const
@@ -210,13 +209,13 @@ void	Channel::implementMode(char toggle, char mode, std::vector<std::string> par
 						// sender recieves RPL_CHANNELMODEIS
 					}
 					else
-						; // sender recieves ??? I feel like this should have an error, but I can't find what applies
+					{} // sender recieves ??? I feel like this should have an error, but I can't find what applies
 				}
 			}
 			break ;
 
 		default:
-			// sender recieves ERR_UNKNOWNMODE
+			sender.queueMessage(ERR_UNKNOWNMODE(mode));
 	}
 }
 
