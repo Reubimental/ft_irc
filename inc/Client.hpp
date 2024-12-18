@@ -14,7 +14,7 @@ class Client
 		Server*					_server;
 		int						_connfd;
 		bool					_isAuthenticated;
-		bool					_isRegestered;
+		bool					_isRegistered;
 		time_t					_lastSeen;
 		unsigned int			_clientId;
 		std::string				_recieveBuffer;
@@ -37,7 +37,7 @@ class Client
 
 		int					getSocket() const;
 		bool				isAuthenticated() const;
-		bool				isRegestered() const;
+		bool				isRegistered() const;
 		time_t				getLastSeen() const;
 		int					getClientId() const;
 		const std::string& 	getMessageBuffer() const;
@@ -50,7 +50,7 @@ class Client
 		bool				isQueueWaiting() const;// returns true if the 
 												   // message queue is not empty
 
-		void	authenticate(const std::string& password);
+		void	authenticate();
 		void	beRegistered(); // may be done when both nick & user commands
 								// have been recieved, instead of as a setter
 
