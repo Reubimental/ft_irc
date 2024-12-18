@@ -21,7 +21,7 @@ Client::Client(const Client& a)
     : _server(a._server)
     , _connfd(a._connfd)
     , _isAuthenticated(a._isAuthenticated)
-    , _isRegestered(a._isRegestered)
+    , _isRegistered(a._isRegistered)
     , _lastSeen(a._lastSeen)
     , _clientId(a._clientId)
     , _recieveBuffer(a._recieveBuffer)
@@ -61,9 +61,9 @@ bool Client::isAuthenticated() const
     return _isAuthenticated;
 }
 
-bool Client::isRegestered() const
+bool Client::isRegistered() const
 {
-    return _isRegestered;
+    return _isRegistered;
 }
 
 time_t Client::getLastSeen() const
@@ -102,19 +102,14 @@ const std::string& Client::getRealname() const
 }
 
 
-void Client::authenticate(const std::string& password)
+void Client::authenticate()
 {
-    (void)password;
-    if (!_isAuthenticated)
-        _isAuthenticated = _server->authenticate(password);
-    else
-        // respod already registered
-        return ;
+    _isAuthenticated = true;
 }
 
 void Client::beRegistered()
 {
-    _isRegestered = true;
+    _isRegistered = true;
 }
 
 void Client::seen()

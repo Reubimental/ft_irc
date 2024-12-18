@@ -202,6 +202,7 @@ bool	Channel::implementMode(char toggle, char mode, std::vector<std::string> var
 		case('i'): // Set/Remove Invite Only channel
 		{
 			std::cout << "Please do not provide any further variables for this MODE." << std::endl;
+			break ;
 		}
 		case('t'): // Set/Remove The ability to use TOPIC command to Operator Only.
 		{

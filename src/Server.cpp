@@ -1,4 +1,3 @@
-
 #include "ft_irc.hpp"
 #include "Server.hpp"
 #include "num_responses.hpp"
@@ -85,11 +84,6 @@ void Server::newClient(struct pollfd& pollresult)
         _nicknames.push_back(_clients[_clients.size() - 1].getNicknameAddr());
         _sockets.push_back((struct pollfd){.fd = connfd, .events = 0, .revents = 0});
     }
-}
-
-bool    Server::authenticate(const std::string& password)
-{
-    return (password == _password);
 }
 
 bool    Server::nicknameAvailable(const std::string& nick)
@@ -205,83 +199,82 @@ void    Server::pongCommand(t_message message, Client& sender)
     sender.pongCommand();
 }
 
-int	Channel::handleCommands(std::string input, Client& client)
+int	Server::handleCommands(std::string input, Client& client)
 {
 	std::istringstream iss(input);
-	std::vector<std::string> tokens;
 	std::vector<std::string>::iterator it;
-	std::string token;
-	std::string	prefix;
+	std::string	token;
+	t_message	message;
 
 	if (iss >> token)
 	{
 		if (token[0] == ':')
-			prefix = token;
+			message.prefix = token;
 		else
-			tokens.push_back(token);
+			message.params.push_back(token);
 	}
 
 	while (iss >> token)
 	{
 		if (token[0] == ':')
 		{
-			std::getline(iss >> std::ws, token);
+			std::getline(iss >> std::ws, message.suffix);
 			break ;
 		}
 		else
-			tokens.push_back(token);
+			message.params.push_back(token);
 	}
-	if (tokens[0] == "KICK")
+	if (message.params[0] == "KICK")
 	{
-		this->kickCommand(tokens, client);
+		this->kickCommand(message, client);
 	}
-	else if (tokens[0] == "INVITE")
+	else if (message.params[0] == "INVITE")
 	{
-		this->inviteCommand(tokens, client);
+		this->inviteCommand(message, client);
 	}
-	else if (tokens[0] == "TOPIC")
+	else if (message.params[0] == "TOPIC")
 	{
-		
+		this->topicCommand(message, client);
 	}
-	else if (tokens[0] == "MODE")
-	{
-		
-	}
-	else if (tokens[0] == "PASS")
+	else if (message.params[0] == "MODE")
 	{
 		
 	}
-	else if (tokens[0] == "NICK")
+	else if (message.params[0] == "PASS")
 	{
 		
 	}
-	else if (tokens[0] == "USER")
+	else if (message.params[0] == "NICK")
 	{
 		
 	}
-	else if (tokens[0] == "JOIN")
+	else if (message.params[0] == "USER")
 	{
 		
 	}
-	else if (tokens[0] == "PRIVMSG")
+	else if (message.params[0] == "JOIN")
 	{
 		
 	}
-	else if (tokens[0] == "PONG") 
+	else if (message.params[0] == "PRIVMSG")
+	{
+		this->privmsgCommand(message, client);
+	}
+	else if (message.params[0] == "PONG") 
+	{
+		this->pongCommand(message, client);
+	}
+	else if (message.params[0] == "PART")
 	{
 		
 	}
-	else if (tokens[0] == "PART")
+	else if (message.params[0] == "QUIT")
 	{
-		
-	}
-	else if (tokens[0] == "QUIT")
-	{
-		
+		this->quitCommand(message, client);
 	}
 	else
 	{
-		ERR_UNKNOWNCOMMAND(tokens[0]);
+		ERR_UNKNOWNCOMMAND(message.params[0]);
 	}
 }
 /*
@@ -289,35 +282,35 @@ int	Channel::handleCommands(std::string input, Client& client)
            ERR_BADCHANMASK                 ERR_CHANOPRIVSNEEDED
            ERR_NOTONCHANNEL
 */
-void	Server::kickCommand(std::vector<std::string> tokens, Client& client)
+void	Server::kickCommand(t_message message, Client& sender) // KICK <#channel> <nickname> [<comment>]
 {
 	Channel* channel;
 
-	if (tokens.size() < 3)
+	if (message.params.size() < 3)
 	{
-		client.queueMessage(ERR_NEEDMOREPARAMS("KICK"));
+		sender.queueMessage(ERR_NEEDMOREPARAMS("KICK"));
 		return ;
 	}
-	channel = this->getChannelByName(tokens[1]);
+	channel = this->getChannelByName(message.params[1]);
 	if (!channel)
 	{
-		client.queueMessage(ERR_NOSUCHCHANNEL(tokens[1]));
+		sender.queueMessage(ERR_NOSUCHCHANNEL(message.params[1]));
 		return ;
 	}
-	if (!channel.checkOp(client.getNickname()))
+	if (!channel.checkOp(sender.getNickname()))
 	{
-		client.queueMessage(ERR_CHANOPRIVSNEEDED(tokens[1]));
+		sender.queueMessage(ERR_CHANOPRIVSNEEDED(message.params[1]));
 		return ;
 	}
-	if (!channel->checkClient(client.getNickname()))
+	if (!channel->checkClient(sender.getNickname()))
 	{
-		client.queueMessage(ERR_NOTONCHANNEL(tokens[1]));
+		sender.queueMessage(ERR_NOTONCHANNEL(message.params[1]));
 		return ;
 	}
-	channel.removeClient(tokens[2]);
-	std::cout << "User " << tokens[2] << " has been kicked from channel " << tokens[1] << "." << std::endl;
-	if (tokens[3])
-		std::cout << "Reason: " << tokens[3] << std::endl;
+	channel.removeClient(message.params[2]);
+	std::cout << "User " << message.params[2] << " has been kicked from channel " << message.params[1] << "." << std::endl;
+	if (message.suffix)
+		std::cout << "Reason: " << message.suffix << std::endl;
 }
 
 /*
@@ -326,42 +319,107 @@ void	Server::kickCommand(std::vector<std::string> tokens, Client& client)
         ERR_CHANOPRIVSNEEDED
         RPL_INVITING                    RPL_AWAY
 */
-void	Server::inviteCommand(std::vector<std::string> tokens, Client& client)
+void	Server::inviteCommand(t_message message, Client& sender) // INVITE <nickname> <#channelname>
 {
 	Channel*	channel;
-	std::string	targetName = tokens[1];
-	std::string	channelName = tokens[2];
-	Client*		target = this->getClientByNuck(targetName);
+	std::string	targetName = message.params[1];
+	std::string	channelName = message.params[2];
+	Client*		target = this->getClientByNick(targetName);
 
-	if (tokens.size() < 3)
+	if (message.params.size() < 3)
 	{
-		client.queueMessage(ERR_NEEDMOREPARAMS("INVITE"))
+		sender.queueMessage(ERR_NEEDMOREPARAMS("INVITE"))
 		return ;
 	}
 	if (!target)
 	{
-		client.queueMessage(ERR_NOSUCHNICK);
+		sender.queueMessage(ERR_NOSUCHNICK);
 		return ;
 	}
-	if (!channel.checkClient(client.getNickname()))
+	channel = this->getChannelByName(channelName);
+	if (!channel || !channel->checkClient(sender.getNickname()))
 	{
-		client.queueMessage(ERR_NOTONCHANNEL(channel->getChannelName()));
+		sender.queueMessage(ERR_NOTONCHANNEL(channel->getChannelName()));
 		return ;
 	}
-	if (channel.checkClient(targetName))
+	if (channel->checkClient(targetName))
 	{
-		client.queueMessage(ERR_USERONCHANNEL(targetName, channelName));
+		sender.queueMessage(ERR_USERONCHANNEL(targetName, channelName));
 		return ;
 	}
-	if (channel.checkInviteOnly() && !channel.checkOp(client.getNickname()))
+	if (channel.checkInviteOnly() && !channel.checkOp(sender.getNickname()))
 	{
-		client.queueMessage(ERR_CHANOPRIVSNEEDED(channelName));
+		sender.queueMessage(ERR_CHANOPRIVSNEEDED(channelName));
 		return ;
 	}
 	target->queueMessage(RPL_INVITING(channelName, targetName));
-	client.queueMessage(RPL_INVITING(channelName, targetName));
+	sender.queueMessage(RPL_INVITING(channelName, targetName));
 	channel.addInvite(this->findIdByNick(targetName));
 }
+
+void	Server::topicCommand(t_message message, Client& sender) // TOPIC <#channel> [<topic>]
+{
+	std::string	channelName = message.params[1];
+	Channel*	channel;
+
+	if (message.params.size() < 2)
+	{
+		sender.queueMessage(ERR_NEEDMOREPARAMS("TOPIC"));
+		return ;
+	}
+	channel = this->findChannelByName(channelName);
+	if (!channel || !channel->checkClient(sender.getNickname))
+	{
+		sender.queueMessage(ERR_NOTONCHANNEL(channel->getChannelName()));
+		return ;
+	}
+	if (!message.suffix)
+	{
+		if (channel->getTopic)
+		{
+			sender.queueMessage(RPL_TOPIC(channel->getChannelName(), channel->getTopic()));
+			return ;
+		}
+		else
+		{
+			sender.queueMessage(RPL_NOTOPIC(channel->getChannelName()));
+			return ;
+		}
+	}
+	if (channel->getTopicOpAccess() && !channel->checkOp(sender.getNickname))
+	{
+		sender.queueMessage(ERR_CHANOPRIVSNEEDED(channel->getChannelName()));
+		return ;
+	}
+	channel->setTopic(message.suffix);
+}
+/*
+		ERR_NEEDMOREPARAMS              ERR_NOTONCHANNEL
+        RPL_NOTOPIC                     RPL_TOPIC
+        ERR_CHANOPRIVSNEEDED
+*/
+
+void	Server::passCommand(t_message message, Client& sender)
+{
+	if (message.params.size() < 2)
+	{
+		sender.queueMessage(ERR_NEEDMOREPARAMS("PASS"));
+		return ;
+	}
+	if (sender.isRegistered())
+	{
+		sender.queueMessage(ERR_ALREADYREGISTRED);
+		return ;
+	}
+	if (message.params[0] == this->_password)
+	{
+		sender.authenticate(message.params[0]);
+		return ;
+	}
+}
+/*
+		ERR_NEEDMOREPARAMS				ERR_ALREADYREGISTRED
+*/
 
 /*
 	The token index that is multi-string for each:

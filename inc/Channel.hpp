@@ -81,5 +81,4 @@ class Channel
 		unsigned int	findIdByNick(std::string nick);
 
 /////////////////*   SERVER STUFF   */////////////////
-		int		handleCommands(std::string input);
 };
