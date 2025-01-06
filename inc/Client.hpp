@@ -68,7 +68,8 @@ class Client
 		void	sendPing();
 		void	pongCommand();
 		
-		void	readSocket(struct pollfd& pollresult);
+		// return negative marks client as disconnected
+		int		readSocket(struct pollfd& pollresult);
 
 		// queues a message to send
 		void	queueMessage(const std::string&);
