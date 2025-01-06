@@ -549,7 +549,16 @@ void	Server::userCommand(t_message message, Client& sender)
 		sender.queueMessage(ERR_NEEDMOREPARAMS("USER"));
 		return ;
 	}
-
+	for (std::vector<Client>::iterator it = this->_clients.begin(); it != this->_clients.end(); ++it;)
+	{
+		if (it.getUsername() == message.params[1])
+		{
+			sender.queueMessage(ERR_ALREADYREGISTRED);
+			return ;
+		}
+	}
+	sender.setUsername(messer.params[1]);
+	sender.setRealname(message.suffix);
 }
 
 /*

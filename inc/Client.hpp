@@ -62,12 +62,8 @@ class Client
 		// setNickname: returns 1 if nickname was successfully set, or -1 if
 		// there was an error, e.g. nickname collision
 		int		setNickname(const std::string&);
-
-		// void	setUsername(const std::string& newUsername); // I believe
-				// this shouldn't be changable
-
-		// void`setRealname(const std::string& newRealname); // do we even use 
-				// this member? also I don't think it's meant to change
+		void	setUsername(const std::string& newUsername);
+		void	setRealname(const std::string& newRealname);
 
 		void	sendPing();
 		void	pongCommand();

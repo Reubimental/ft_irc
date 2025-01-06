@@ -154,6 +154,16 @@ int Client::setNickname(const std::string& newNickname)
     }
 }
 
+void	Client::setUsername(const std::string& newUsername)
+{
+    this->_username = newUsername;
+}
+
+void	Client::setRealname(const std::string& newRealname)
+{
+    this->_realname = newRealname;
+}
+
 void Client::sendPing()
 {
     queueMessage("PING");
