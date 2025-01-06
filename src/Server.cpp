@@ -421,6 +421,18 @@ void	Server::passCommand(t_message message, Client& sender)
 		ERR_NEEDMOREPARAMS				ERR_ALREADYREGISTRED
 */
 
+
+void	Server::nickCommand(t_message message, Client& sender)
+{
+	
+}
+
+/*
+
+	ERR_NONICKNAMEGIVEN             ERR_ERRONEUSNICKNAME
+    ERR_NICKNAMEINUSE               ERR_NICKCOLLISION
+
+*/
 /*
 	The token index that is multi-string for each:
 		KICK <3>
