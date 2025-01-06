@@ -33,7 +33,7 @@ class Channel
         void modeOperator(std::vector<std::__cxx11::string> &params, Client &sender, char toggle, char &mode);
 
 	public:
-		Channel(std::string channelName);
+		Channel(std::string channelName, Client* sender);
 		~Channel();
 		/*   Setters   */
 		// void	setChannelId(int id); ### REDUNDANT ###

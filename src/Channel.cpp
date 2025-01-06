@@ -15,9 +15,11 @@ Channel::Channel(): _channelId(channelID)
 	std::cout << "Channel of ID " << getChannelId() << " has been initiated." << std::endl;
 }
 
-Channel::Channel(std::string channelName): _channelId(channelID), _channelName(channelName)
+Channel::Channel(std::string channelName, Client* sender): _channelId(channelID), _channelName(channelName)
 {
 	channelID++;
+	this->_operators.push_back(sender);
+	this->_clients.push_back(sender);
 	std::cout << "Channel of ID " << getChannelId() << " has been initiated." << std::endl;
 }
 

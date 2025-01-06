@@ -416,15 +416,17 @@ void	Server::kickCommand(t_message message, Client& sender) // KICK <#channel> <
 void	Server::inviteCommand(t_message message, Client& sender) // INVITE <nickname> <#channelname>
 {
 	Channel*	channel;
-	std::string	targetName = message.params[1];
-	std::string	channelName = message.params[2];
-	Client*		target = this->getClientByNick(targetName);
 
 	if (message.params.size() < 3)
 	{
 		sender.queueMessage(ERR_NEEDMOREPARAMS("INVITE"));
 		return ;
 	}
+
+	std::string	targetName = message.params[1];
+	std::string	channelName = message.params[2];
+	Client*		target = this->getClientByNick(targetName);
+
 	if (!target)
 	{
 		sender.queueMessage(ERR_NOSUCHNICK);
@@ -608,4 +610,99 @@ void	Server::partCommand(t_message message, Client& sender)
 /*
 	ERR_NEEDMOREPARAMS              ERR_NOSUCHCHANNEL
     ERR_NOTONCHANNEL
+*/
+vector<pair<std::string, std::string>> Server::joinTokenizer(const std::string& channels_str, const std::string& passwords_str, Client& sender)
+{
+	std::vector<std::string> channels;
+	std::vector<std::string> passwords;
+	std::vector<std::pair<std::string, std::string>> tokenized;
+
+	std::istringstream channels_stream(channels_str);
+	std::string channel;
+	while (std::getline(channels_stream, channel, ','))
+		channels.push_back(channel);
+
+	if (!passwords_str.empty())
+	{
+		std::istringstream passwords_stream(passwords_str);
+		std::string password;
+		while (std::getline(passwords_stream, password, ','))
+			passwords.push_back(password);
+	}
+	else if (channels.size() > passwords.size())
+	{
+		passwords.resize(channels.size(), "");
+	}
+	if (channels.size() < passwords.size())
+	{
+		sender.queueMessage("Error: Provided too many passwords. Please review.");
+		return (tokenized);
+	}
+
+	for (std::size_t i = 0; i < channels.size(); ++i)
+	{
+		std::string password = i < passwords.size() ? passwords[i] : "";
+		tokenized.push_back(std::make_pair(channels[i], password));
+	}
+	return (tokenized);
+}
+
+void	Server::joinCommand(t_message message, Client& sender)
+{
+	vector<pair<std::string, std::string>> tokenizedInput;
+	std::string	channels;
+
+	if (message.params.size() < 2)
+	{
+		sender.queueMessage(ERR_NEEDMOREPARAMS("JOIN"));
+		return ;
+	}
+	channels = message.params[1];
+	std::string	passwords = message.params.size() < 2 ? message.params[2] : "";
+	tokenizedInput = this->joinTokenizer(channels, passwords, sender);
+	for (size_t i = 0; i < tokenizedInput.size(); i++)
+	{
+		if (tokenizedInput[i].first.at(0) != '#')
+		{
+			sender.queueMessage(ERR_NOSUCHCHANNEL());
+			return ;
+		}
+		Channel* channel = this->getChannelByName(tokenizedInput[i].first);
+		if (!channel)
+		{
+			Channel* newChannel = new Channel(tokenizedInput[i].first, &sender);
+			this->_channels.push_back(newChannel);
+			return ;
+		}
+		if (channel->checkInviteOnly() && !(channel->canClientJoin(sender.getClientId())))
+		{
+			sender.queueMessage(ERR_INVITEONLYCHAN(tokenizedInput[i].first));
+			return ;
+		}
+		if (channel->getPassword() && channel->getPassword() != tokenizedInput[i].second)
+		{
+			sender.queueMessage(ERR_BADCHANNELKEY(tokenizedInput[i].first));
+			return ;
+		}
+		if (channel->getUserLimit() && channel->getUserCount >= channel->getUserLimit && channel->checkOp(sender.getNickname(), 0))
+		{
+			sender.queueMessage(ERR_CHANNELISFULL(tokenizedInput[i].first));
+			return ;
+		}
+		channel->addClient(sender);
+		sender.queueMessage(RPL_TOPIC(tokenizedInput[i].first, channel->getTopic()));
+	}
+	return ;
+}
+
+/*
+Command: JOIN
+   Parameters: <channel>{,<channel>} [<key>{,<key>}]
+
+Numeric Replies:
+
+           ERR_NEEDMOREPARAMS*              ERR_NOSUCHCHANNEL*
+           ERR_INVITEONLYCHAN*               ERR_BADCHANNELKEY*
+           ERR_CHANNELISFULL*
+           RPL_TOPIC
 */

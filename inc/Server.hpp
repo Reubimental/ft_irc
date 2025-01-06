@@ -68,6 +68,8 @@ public:
 
 	// literally nothing command
 	void    pongCommand     (t_message message, Client& sender);
+
+	vector<pair<std::string, std::string>> joinTokenizer(const std::string& channels_str, const std::string& passwords_str);
 };
 
 // { "KICK",
