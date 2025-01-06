@@ -51,7 +51,7 @@ $(OBJ_DIR)%.o: $(SRC_DIR)%.cpp | $(OBJ_DIR:/=)
 $(OBJ_DIR:/=):
 	@mkdir $(OBJ_DIR)
 
-$(DEBUG_DIR)%.o: $(SRC_DIR)%.c | $(DEBUG_DIR:/=)
+$(DEBUG_DIR)%.o: $(SRC_DIR)%.cpp | $(DEBUG_DIR:/=)
 	@printf "$(PREFIX) $(C_GRAY)COMPILING $(C_CYAN)$@$(NC)\n"
 	@$(CXX) $(CXXFLAGS) $(DEBUG_FLAGS) $(IFLAGS) -MMD -c $< -o $@
 

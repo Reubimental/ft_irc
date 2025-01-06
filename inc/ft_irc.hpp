@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+std::string getInput(int fd);
+
 typedef struct s_message
 {
     std::string prefix;

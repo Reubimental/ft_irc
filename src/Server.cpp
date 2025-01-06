@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+#include <fcntl.h>
 
 #define CREATE_POLLFD(_f, _e) (struct pollfd){.fd = (_f), .events = static_cast<short>(_e), .revents = 0}
 
@@ -21,6 +22,7 @@ void Server::_Server(int port)
     {
         throw std::runtime_error("Error creating socket");
     }
+	fcntl(_sockfd, F_SETFL, O_NONBLOCK);
 
     std::memset(&servAddr, 0, sizeof(servAddr));
     servAddr.sin_family = AF_INET;
@@ -92,7 +94,7 @@ int Server::pollSockets()
 	for (client_iter it = _clients.begin(); it < _clients.end(); ++it)
 	{
 		int pollmode = POLLIN;
-		if ((*it)->isQueueWaiting()) pollmode |= POLLOUT;
+		if ((*it)->isQueueWaiting()) {pollmode |= POLLOUT; std::cout<<"attempting queue message"<<std::endl;}
 
 		// sockets[>1] are client fds
 	    _sockets.push_back(CREATE_POLLFD((*it)->getSocket(), pollmode));
@@ -108,8 +110,6 @@ void Server::run()
 	{
 		// gets all pollfds and runs poll
 		numEvent = pollSockets();
-
-		std::cout << numEvent << std::endl;
 
 		if (numEvent < 0) // poll error
 		{
@@ -128,12 +128,11 @@ void Server::run()
 			// if stdin has data, quit -- maybe add input handling later?
 			if (_sockets[0].revents & POLLIN) {std::cin.ignore(); break ;}
 			// if new client waiting, add it
-			if (_sockets[0].revents & POLLIN) newClient();
+			if (_sockets[1].revents & POLLIN) newClient();
 
 			for (socket_iter it = _sockets.begin() + 2; it < _sockets.end(); ++it)
 			{
 				std::cout << it->fd << ": " << it->revents << std::endl;
-				break ;
 				if (it->revents)
 				{
 					getClientBySocket(it->fd)->readSocket(*it);
@@ -156,6 +155,7 @@ void Server::newClient()
 		std::cout << "Connection failed" << std::endl;
 		return ;
 	}
+	fcntl(connfd, F_SETFL, O_NONBLOCK);
 	std::cout << "Connection success!" << std::endl;
 	_clients.push_back(new Client(this, connfd));
 	_nicknames.push_back((*_clients[_clients.size() - 1]).getNicknameAddr());
@@ -290,6 +290,8 @@ void	Server::handleCommands(std::string input, Client& client)
 	std::string	token;
 	t_message	message;
 
+	std::cout << input << std::endl;
+
 	if (iss >> token)
 	{
 		if (token[0] == ':')
@@ -308,6 +310,8 @@ void	Server::handleCommands(std::string input, Client& client)
 		else
 			message.params.push_back(token);
 	}
+	if (message.params.size() == 0)
+		return ;
 	if (message.params[0] == "KICK")
 	{
 		this->kickCommand(message, client);
@@ -358,7 +362,7 @@ void	Server::handleCommands(std::string input, Client& client)
 	}
 	else
 	{
-		ERR_UNKNOWNCOMMAND(message.params[0]);
+		client.queueMessage(ERR_UNKNOWNCOMMAND(message.params[0]));
 	}
 }
 /*
@@ -443,7 +447,6 @@ void	Server::inviteCommand(t_message message, Client& sender) // INVITE <nicknam
 
 void	Server::topicCommand(t_message message, Client& sender) // TOPIC <#channel> [<topic>]
 {
-	std::string	channelName = message.params[1];
 	Channel*	channel;
 
 	if (message.params.size() < 2)
@@ -451,6 +454,9 @@ void	Server::topicCommand(t_message message, Client& sender) // TOPIC <#channel>
 		sender.queueMessage(ERR_NEEDMOREPARAMS("TOPIC"));
 		return ;
 	}
+
+	std::string	channelName = message.params[1];
+
 	channel = this->getChannelByName(channelName);
 	if (!channel || !channel->checkClient(sender.getNickname()))
 	{
@@ -508,16 +514,17 @@ void	Server::passCommand(t_message message, Client& sender)
 
 void	Server::nickCommand(t_message message, Client& sender)
 {
-	std::string nickname = message.params[1];
-
 	if (message.params.size() < 2)
 	{
 		sender.queueMessage(ERR_NONICKNAMEGIVEN);
 		return ;
 	}
-	for (std::string::iterator it = nickname.begin(); it != nickname.end(); ++i)
+
+	std::string nickname = message.params[1];
+
+	for (std::string::iterator it = nickname.begin(); it != nickname.end(); ++it)
 	{
-		if (!std::isalnum(*it) && !*it == '_')
+		if (!std::isalnum(*it) && !(*it == '_'))
 		{
 			sender.queueMessage(ERR_ERRONEUSNICKNAME(nickname));
 			return ;
@@ -525,7 +532,7 @@ void	Server::nickCommand(t_message message, Client& sender)
 	}
 	if (getClientByNick(nickname))
 	{
-		sender.queueMessage(ERR_NICKNAMEINUSE(nickname))
+		sender.queueMessage(ERR_NICKNAMEINUSE(nickname));
 		return ;
 	}
 }
