@@ -117,11 +117,11 @@ void	Channel::addInvite(unsigned int clientId)
 		this->_invited.push_back(clientId);
 }
 
-void	Channel::removeClient(std::string client)
+void	Channel::removeClient(std::string clientNickname)
 {
 	for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
-		if ((*it)->getNickname() == client)
+		if ((*it)->getNickname() == clientNickname)
 		{
 			_clients.erase(it);
 			break ;

@@ -560,11 +560,34 @@ void	Server::userCommand(t_message message, Client& sender)
 	 Command: USER
    Parameters: <username> <hostname> <servername> <realname>
 */
+
+void	Server::partCommand(t_message message, Client& sender)
+{
+	Channel* channel;
+
+	if (message.params.size() < 2)
+	{
+		sender.queueMessage(ERR_NEEDMOREPARAMS("PART"));
+		return ;
+	}
+	for (size_t i = 1; i != message.params.size(); i++)
+	{
+		channel = this->getChannelByName(message.params[i]);
+		if (!channel)
+		{
+			sender.queueMessage(ERR_NOSUCHCHANNEL(message.params[i]));
+			return ;
+		}
+		if (!channel->checkClient(sender.getNickname()));
+		{
+			sender.queueMessage(ERR_NOTONCHANNEL(message.params[i]));
+			return ;
+		}
+		channel->removeClient(sender.getNickname());
+	}
+}
+
 /*
-	The token index that is multi-string for each:
-		KICK <3>
-		TOPIC <2>
-		USER <4>
-		PRIVMSG <2>
-		QUIT <1>
+	ERR_NEEDMOREPARAMS              ERR_NOSUCHCHANNEL
+    ERR_NOTONCHANNEL
 */

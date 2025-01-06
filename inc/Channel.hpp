@@ -52,7 +52,7 @@ class Channel
 		bool	isFull() const;
 		void	addClient(Client& client);
 		void	addInvite(unsigned int clientId);
-		void	removeClient(std::string client);
+		void	removeClient(std::string clientNickname);
 		void	setUserLimit(int limit);
 		int		getUserCount() const;
 		int		getUserLimit() const;
