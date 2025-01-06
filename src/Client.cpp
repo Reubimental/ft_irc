@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "Client.hpp"
 #include "Server.hpp"
+#include <unistd.h>
 
 static unsigned int numClients = 0;
 
@@ -166,38 +167,35 @@ void Client::pongCommand()
 // ****************************************** TODO ************
 void Client::readSocket(struct pollfd& pollresult)
 {
+
     if (pollresult.revents & POLLIN)
-        return ; // read here // also set lastSeen
-    // read from _socket
+    {
+        _recieveBuffer.append(getInput(_connfd));
+        int m_len;
+        while ((m_len = _recieveBuffer.find('\n')) >= 0
+            || (m_len = _recieveBuffer.find('\r')) >= 0)
+        {
+            _server->handleCommands(_recieveBuffer.substr(0, m_len), *this);
+            _recieveBuffer = _recieveBuffer.substr(m_len + 1);
+        }
+    }
 
     if (pollresult.revents & POLLOUT)
-        return ; // send here
-
-    if (false /*a full message is obtained -- ends with either \n or \r*/)
-        _server->doCommand(NULL, *this);
-    std::cout << "message recieved!" << std::endl;
+    {
+        std::string send;
+        while (!_sendBuffer.empty())
+        {
+            send.append(_sendBuffer.front());
+            send.append("\n");
+            _sendBuffer.pop();
+        }
+        write(_connfd, send.c_str(), send.size());
+    }
 }
 
 void    Client::queueMessage(const std::string& message)
 {
-    std::cout << "NOT FULLY IMPLEMENTED, NO MESSAGES SENT" << std::endl;
-    
-    if (true /*check socket*/)
-    {
-        if (!_sendBuffer.empty())
-        {
-            while (!_sendBuffer.empty())
-            {
-                // send message
-                _sendBuffer.pop();
-            }
-            // attempt to send old messages
-        }
-        sendMessage(message);
-    }
-    else
-        // can't send messages, add to queue instead
-        _sendBuffer.push(message);
+    _sendBuffer.push(message);
 }
 
 void Client::queueMessage(t_message message)

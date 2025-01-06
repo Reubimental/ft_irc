@@ -1,6 +1,8 @@
 #include "ft_irc.hpp"
 #include <iostream>
 #include "Server.hpp"
+#include <unistd.h>
+#include <cerrno>
 
 int main(int ac, char **av)
 {
@@ -15,4 +17,22 @@ int main(int ac, char **av)
     Server server(port, av[1]);
 
     server.run();
+}
+
+std::string getInput(int fd)
+{
+    std::string output;
+    char buf[256];
+    int  read_bytes;
+
+    while ((read_bytes = read(fd, buf, 255)))
+    {
+        if (read_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+            break ;
+        else if (read_bytes < 0)
+            throw std::runtime_error("READ ERROR");
+        buf[read_bytes] = 0;
+        output.append(buf);
+    }
+    return output;
 }

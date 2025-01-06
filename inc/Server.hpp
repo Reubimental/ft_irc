@@ -43,7 +43,6 @@ public:
 
 	void run();
 
-	void doCommand(const std::string& cmdstr, Client&);
 	void newClient();
 	bool nicknameAvailable(const std::string& nick);
 	Channel* getChannelByName(const std::string& channel);
