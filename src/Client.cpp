@@ -13,8 +13,17 @@ static unsigned int numClients = 0;
 Client::Client(Server* server, int connfd)
     : _server(server)
     , _connfd(connfd)
+    , _isAuthenticated(false)
+    , _isRegistered(false)
     , _lastSeen(time(NULL))
     , _clientId(++numClients)
+    , _recieveBuffer()
+    , _nickname()
+    , _username()
+    , _realname()
+    , _sendBuffer()
+    , _isPinging(false)
+    , _pingSentAt()
 {
     std::cout << "Initializing Client ID " << _clientId << std::endl;
 }
@@ -120,11 +129,13 @@ bool Client::isQueueWaiting() const
 
 void Client::authenticate()
 {
+    std::cout << "CLIENTID " << _clientId << " IS NOW AUTHENTICATED" << std::endl;
     _isAuthenticated = true;
 }
 
 void Client::beRegistered()
 {
+    std::cout << "CLIENT " << _nickname << " IS NOW REGISTERED" << std::endl;
     _isRegistered = true;
 }
 
@@ -174,9 +185,9 @@ void Client::pongCommand()
     _isPinging = false;
 }
 
-// ****************************************** TODO ************
 int Client::readSocket(struct pollfd& pollresult)
 {
+    _lastSeen = time(NULL);
 
     if (pollresult.revents & POLLIN)
     {
@@ -217,13 +228,16 @@ void Client::queueMessage(t_message message)
     std::ostringstream oss;
 
     if (message.prefix.size() > 0)
-        oss << ':' << message.prefix;
-    for (std::vector<std::string>::iterator it = message.params.begin(); it != message.params.end(); ++it)
+        oss << ':' << message.prefix << ' ';
+    for (std::vector<std::string>::iterator it = message.params.begin();
+        it < message.params.end(); ++it)
     {
         oss << *it;
+        if (it + 1 < message.params.end())
+            oss << ' ';
     }
     if (message.suffix.size() > 0)
-        oss << ':' << message.suffix;
+        oss << " :" << message.suffix;
     queueMessage(oss.str());
 }
 

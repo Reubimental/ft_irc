@@ -294,28 +294,34 @@ void	Server::handleCommands(std::string input, Client& client)
 			message.params.push_back(token);
 	}
 
-	while (iss >> token)
+	while (iss.good())
 	{
-		if (token[0] == ':')
+		if ((iss >> std::ws).peek() == ':')
 		{
-			std::getline(iss >> std::ws, message.suffix);
+			iss.get();
+			std::getline(iss, message.suffix);
 			break ;
 		}
-		else
-			message.params.push_back(token);
+		iss >> token;
+		message.params.push_back(token);
 	}
 	if (message.params.size() == 0)
 		return ;
 
-	int authState = client.isAuthenticated() + client.isRegistered();
-	if (authState < 2)
+	std::cout << "COMMAND IS " << message.params[0] << std::endl;
+	std::cout << "SUFFIX IS " << message.suffix << std::endl;
+
+	if (!client.isRegistered())
 	{
+		std::cout << "CLIENTID " << client.getClientId() << " IS NOT REGISTERED" << std::endl;
 		if (message.params[0] == "PASS")
 			this->passCommand(message, client);
-		else if (message.params[0] == "NICK" && authState == 1)
+		else if (message.params[0] == "NICK" && client.isAuthenticated())
 			this->nickCommand(message, client);
-		else if (message.params[0] == "USER" && authState == 1)
+		else if (message.params[0] == "USER" && client.isAuthenticated())
 			this->userCommand(message, client);
+		else if (message.params[0] == "QUIT")
+			this->quitCommand(message, client);
 		return ;
 	}
 	if (message.params[0] == "KICK")
@@ -507,6 +513,7 @@ void	Server::passCommand(t_message message, Client& sender)
 		sender.queueMessage(ERR_ALREADYREGISTRED);
 		return ;
 	}
+	std::cout << "'" << _password << "' '" << message.params[1] << "'" << std::endl;
 	if (message.params[1] == this->_password)
 	{
 		sender.authenticate();
@@ -555,9 +562,13 @@ void	Server::nickCommand(t_message message, Client& sender)
 
 void	Server::userCommand(t_message message, Client& sender)
 {
+	if (sender.isRegistered())
+	{
+		sender.queueMessage(ERR_ALREADYREGISTRED);
+	}
 	if (!sender.isAuthenticated())
 		return ;
-	if (message.params.size() < 2)
+	if (message.params.size() < 4 && message.suffix.size() != 0)
 	{
 		sender.queueMessage(ERR_NEEDMOREPARAMS("USER"));
 		return ;
