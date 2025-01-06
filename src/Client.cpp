@@ -2,6 +2,7 @@
 #include <poll.h>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include "Client.hpp"
 #include "Server.hpp"
@@ -101,6 +102,20 @@ const std::string& Client::getRealname() const
     return _realname;
 }
 
+bool Client::isPinging() const
+{
+    return _isPinging;
+}
+
+time_t Client::getPingSentAt() const
+{
+    return _pingSentAt;
+}
+
+bool Client::isQueueWaiting() const
+{
+    return _sendBuffer.size() != 0;
+}
 
 void Client::authenticate()
 {
@@ -138,12 +153,21 @@ int Client::setNickname(const std::string& newNickname)
     }
 }
 
+void Client::sendPing()
+{
+    queueMessage("PING");
+}
+
+void Client::pongCommand()
+{
+    _isPinging = false;
+}
 
 // ****************************************** TODO ************
 void Client::readSocket(struct pollfd& pollresult)
 {
     if (pollresult.revents & POLLIN)
-        return ; // read here
+        return ; // read here // also set lastSeen
     // read from _socket
 
     if (pollresult.revents & POLLOUT)
@@ -174,6 +198,21 @@ void    Client::queueMessage(const std::string& message)
     else
         // can't send messages, add to queue instead
         _sendBuffer.push(message);
+}
+
+void Client::queueMessage(t_message message)
+{
+    std::ostringstream oss;
+
+    if (message.prefix.size() > 0)
+        oss << ':' << message.prefix;
+    for (std::vector<std::string>::iterator it = message.params.begin(); it != message.params.end(); ++it)
+    {
+        oss << *it;
+    }
+    if (message.suffix.size() > 0)
+        oss << ':' << message.suffix;
+    queueMessage(oss.str());
 }
 
 void    Client::sendMessage(const std::string& message)

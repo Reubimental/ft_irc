@@ -1,19 +1,21 @@
 #include "Channel.hpp"
 #include <iostream>
+#include <sstream>
 #include <vector>
+#include "num_responses.hpp"
 
 static unsigned int	channelID = 1;
 
 Channel::Channel(): _channelId(channelID)
 {
-	std::stringstream ss;
+	std::ostringstream ss;
 	ss << "Channel " << channelID;
 	_channelName = ss.str();
 	channelID++;
 	std::cout << "Channel of ID " << getChannelId() << " has been initiated." << std::endl;
 }
 
-Channel::Channel(std::string channelName): _channelName(channelName), _channelId(channelID)
+Channel::Channel(std::string channelName): _channelId(channelID), _channelName(channelName)
 {
 	channelID++;
 	std::cout << "Channel of ID " << getChannelId() << " has been initiated." << std::endl;
@@ -39,6 +41,11 @@ std::string	Channel::getChannelName() const
 	return (this->_channelName);
 }
 
+bool Channel::getTopicOpAccess() const
+{
+    return _topicOpAccess;
+}
+
 void	Channel::setChannelName(const std::string& name)
 {
 	this->_channelName = name;
@@ -46,12 +53,9 @@ void	Channel::setChannelName(const std::string& name)
 
 bool	Channel::checkClient(std::string nickname)
 {
-	unsigned int ID = this->findIdByNick(nickname);
-	std::vector<Client>::iterator it;
-
-	for (std::vector<Client>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
+	for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
-		if (it->getClientId() == ID)
+		if ((*it)->getNickname() == nickname)
 			return (true);
 	}
 	return (false);
@@ -59,12 +63,11 @@ bool	Channel::checkClient(std::string nickname)
 
 bool	Channel::checkOp(std::string nickname, int change)
 {
-	unsigned int ID = findIdByNick(nickname);
-	std::vector<Client>::iterator it;
+	std::vector<Client*>::iterator it;
 
 	for (it = _operators.begin(); it != _operators.end(); ++it)
 	{
-		if (it->getClientId() == ID)
+		if ((*it)->getNickname() == nickname)
 		{
 			if (change == -1)
 				_operators.erase(it);
@@ -72,7 +75,7 @@ bool	Channel::checkOp(std::string nickname, int change)
 		}
 	}
 	if (change == 1)
-		this->_operators.push_back(it);
+		this->_operators.push_back(*it);
 	return (false);
 }
 
@@ -83,45 +86,44 @@ void	Channel::printMessage(const std::string& message, const std::string& target
 
 void	Channel::broadcastMessage(const std::string& message, const std::string& targetName)
 {
-	for (std::vector<Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	(void)targetName;
+	for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
-		it.queueMessage(message);
+		(*it)->queueMessage(message);
 	}
 }
 
 bool	Channel::isFull() const
 {
-	if (this->_currentUserCount >= this->_userLimit)
+	if (this->_clients.size() >= this->_userLimit)
 		return (true);
 	return (false);
 }
 
-void	Channel::addClient(const Client& client)
+void	Channel::addClient(Client& client)
 {
 	if (!this->isFull())
 	{
-		this->_clients.push_back(client);
-		this->_currentUserCount++;
+		this->_clients.push_back(&client);
 		return ;
 	}
 	std::cout << "Sorry, Channel \"" << this->getChannelName() << "\" is full." << this->getUserCount() << "/" << this->getUserLimit() << std::endl;
 }
 
-void	Channel::addInvite(const int clientId)
+void	Channel::addInvite(unsigned int clientId)
 {
-	this->_invited.push_back(clientId);
-	return ;
+	std::vector<unsigned int>::iterator it = std::find(_invited.begin(), _invited.end(), clientId);
+	if (it == _invited.end())
+		this->_invited.push_back(clientId);
 }
 
 void	Channel::removeClient(std::string client)
 {
-	unsigned int clientId = findIdByNick(client);
-	for (std::vector<Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
-		if (it->getClientId() == clientId)
+		if ((*it)->getNickname() == client)
 		{
 			_clients.erase(it);
-			_currentUserCount--;
 			break ;
 		}
 	}
@@ -134,7 +136,7 @@ void	Channel::setUserLimit(int limit)
 
 int	Channel::getUserCount() const
 {
-	return (this->_currentUserCount);
+	return (this->_clients.size());
 }
 
 int	Channel::getUserLimit() const
@@ -152,95 +154,119 @@ std::string	Channel::getTopic() const
 	return (this->_channelTopic);
 }
 
-bool	Channel::implementMode(char toggle, char mode)
-{
-	switch(mode)
-	{
-		case('i'):
-		{
-			if (toggle == '-')
-				this->_inviteOnly = false;					//	unset if channel mode Invite-Only is Active.
-			else if (toggle == '+')
-				this->_inviteOnly = true;					//	set if channel mode Invite-Only is Inactive.
-			break ;
-		}
-		case('t'):
-		{
-			if (toggle == '-' && this->_topicOpAccess)
-				this->_topicOpAccess = false;
-			else if (toggle == '+' && !this->_topicOpAccess)
-				this->_topicOpAccess = true;
-			break ;
-		}
-		case('k'):
-		{
-			std::cout << "Please input a password with this command." << std::endl;
-			break ;
-		}
-		case('o'):
-		{
-			std::cout << "Please provide a NICK to op." << std::endl;
-			break ;
-		}
-		case('l'):
-		{
-			std::cout << "Please input the number of users you'd like to limit this channel to." << std::endl;
-			break ;
-		}
-		default:
-		{
-			return (false);
-		}
-	}
-	return (true);
-}
-
-bool	Channel::implementMode(char toggle, char mode, std::vector<std::string> variables)
+void	Channel::implementMode(char toggle, char mode, std::vector<std::string> params, Client& sender)
 {
 	switch(mode)
 	{
 		case('i'): // Set/Remove Invite Only channel
-		{
-			std::cout << "Please do not provide any further variables for this MODE." << std::endl;
+
+			if (toggle == '-')
+				this->_inviteOnly = false;
+			else if (toggle == '+')
+				this->_inviteOnly = true;
+			sender.queueMessage(RPL_CHANNELMODEIS(_channelName, mode, _inviteOnly));
 			break ;
-		}
+
 		case('t'): // Set/Remove The ability to use TOPIC command to Operator Only.
-		{
-			std::cout << "Please do not provide any further variables for this MODE." << std::endl;
-		}
+
+			if (toggle == '-' && this->_topicOpAccess)
+				this->_topicOpAccess = false;
+			else if (toggle == '+' && !this->_topicOpAccess)
+				this->_topicOpAccess = true;
+			sender.queueMessage(RPL_CHANNELMODEIS(_channelName, mode, _topicOpAccess));
+			break ;
+
 		case('k'): // Set/Remove the channel key (password)
-		{
+
 			if (toggle == '-' && !this->getPassword().empty())
 				this->getPassword().clear();
 			else if (toggle == '+')
-				this->setPassword(variables[0]);
+				this->setPassword(params[0]);
+			sender.queueMessage(RPL_CHANNELMODEIS(_channelName, mode, (_password.size() != 0)));
 			break ;
-		}
+
 		case('o'): // Give/Take Operator privilege
-		{
-			if (toggle == '-')
-				this->checkOp( /*   needs variable-input implementation   */  );
-			else if (toggle == '+')
-				this->checkOp( /*   needs variable-input implementation   */  );
-			break ;
-		}
-		case('l'): // Set/Remove user limit on Channel
-		{
+
+            modeOperator(params, sender, toggle, mode);
+			break;
+
+        case('l'): // Set/Remove user limit on Channel
+
 			if (this->getUserLimit())
 			{
 				if (toggle == '-')
+				{
 					this->setUserLimit(0);
-				else if (toggle == '+' && std::isdigit(std::stoi(variables[0])))
-					this->setUserLimit(std::stoi(variables[0]));
+					// sender recieves RPL_CHANNELMODEIS
+				}
+				else if (toggle == '+')
+				{
+					char *end;
+					int newLimit = std::strtol(params[0].c_str(), &end, 10);
+					if (!end)
+					{
+						this->setUserLimit(newLimit);
+						// sender recieves RPL_CHANNELMODEIS
+					}
+					else
+					{} // sender recieves ??? I feel like this should have an error, but I can't find what applies
+				}
 			}
 			break ;
-		}
+
 		default:
-		{
-			return (false);
-		}
+			sender.queueMessage(ERR_UNKNOWNMODE(mode));
 	}
-	return (true);
+}
+
+void Channel::modeOperator(std::vector<std::string> &params, Client &sender, char toggle, char &mode)
+{
+    if (params.size() < 1)
+    {
+        sender.queueMessage(ERR_NEEDMOREPARAMS("MODE"));
+		return;
+    }
+    if (toggle == '-')
+    {
+        for (std::vector<std::string>::iterator opNick = params.begin(); opNick != params.end(); ++opNick)
+        {
+            for (std::vector<Client*>::iterator cit = _operators.begin(); cit != _operators.end(); ++cit)
+            {
+                if ((*cit)->getNickname() == *opNick)
+                {
+                    _operators.erase(cit);
+                    break;
+                }
+            }
+        }
+    }
+    else if (toggle == '+')
+    {
+		for (std::vector<std::string>::iterator opNick = params.begin(); opNick != params.end(); ++opNick)
+        {
+			bool willAdd = true;
+            for (std::vector<Client*>::iterator opit = _operators.begin(); opit != _operators.end(); ++opit)
+            {
+                if ((*opit)->getNickname() == *opNick)
+                {
+					willAdd = false;
+                    break;
+                }
+            }
+			if (willAdd)
+			{
+				for (std::vector<Client*>::iterator cit = _clients.begin(); cit != _clients.end(); ++cit)
+				{
+					if ((*cit)->getNickname() == *opNick)
+					{
+						_operators.push_back(*cit);
+						break ;
+					}
+				}
+			}
+        }
+    }
+    sender.queueMessage(RPL_CHANNELMODEIS(_channelName, mode, "There are " << _operators.size() << " operators"));
 }
 
 void	Channel::setPassword(std::string password)
@@ -253,19 +279,33 @@ std::string	Channel::getPassword() const
 	return (this->_password);
 }
 
-unsigned int	Channel::findIdByNick(std::string nick)
-{
-	int	ID;
-	for (std::vector<Client>::const_iterator it = this->_clients.begin(); it != this->_clients.end(); it++)
-	{
-		if (nick == _clients.getNickname())
-			return (_clients.getClientId());
-	}
-	std::cout << "Nickname does not exist in database." << std::endl;
-	return (NULL);
-}
-
 bool	Channel::checkInviteOnly()
 {
 	return (this->_inviteOnly);
+}
+
+bool Channel::canClientJoin(unsigned int clientID)
+{
+	if (!_inviteOnly)
+		return (true);
+	std::vector<unsigned int>::iterator it = std::find(_invited.begin(), _invited.end(), clientID);
+	return (it != _invited.end());
+}
+
+void Channel::modeCommand(t_message message, Client &sender)
+{
+	char toggle = 0;
+	char mode;
+	
+	if (message.params[1].size() == 1)
+		mode = message.params[1][0];
+	else if (message.params[1].size() == 2)
+	{
+		toggle = message.params[1][0];
+		mode = message.params[1][1];
+	}
+	else
+		return ;
+	std::vector<std::string> params(message.params.begin() + 2, message.params.end());
+	implementMode(toggle, mode, params, sender);
 }

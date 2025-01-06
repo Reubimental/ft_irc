@@ -6,20 +6,6 @@
 #include <string>
 #include <algorithm>
 
-std::vector<std::string> validOpCommands =
-	{ "KICK",
-	"INVITE",
-	"TOPIC",
-	"MODE",
-	"PASS",
-	"NICK",
-	"USER",
-	"JOIN",
-	"PRIVMSG",
-	"PONG",
-	"PART",
-	"QUIT" };
-
 struct Commands
 {
 	std::string					prefix;
@@ -30,21 +16,23 @@ struct Commands
 class Channel
 {
 	private:
-		std::vector<Client>		_clients;
-		std::vector<Client>		_operators;
-		std::vector<int>		_invited;
-		std::queue<std::string>	_messageBuffer;
-        unsigned int			_channelId;
-		std::string				_channelName;
-		std::string				_channelTopic;
-		unsigned int			_currentUserCount;
+		Channel();
+
+		std::vector<Client*>		_clients;
+		std::vector<Client*>		_operators;
+		std::vector<unsigned int>	_invited;
+        unsigned int				_channelId;
+		std::string					_channelName;
+		std::string					_channelTopic;
 		/*   MODES   */
 		bool		_inviteOnly;
 		bool		_topicOpAccess;
 		std::string	_password;
-		int			_userLimit;
+		unsigned int			_userLimit;
+
+        void modeOperator(std::vector<std::__cxx11::string> &params, Client &sender, char toggle, char &mode);
+
 	public:
-		Channel();
 		Channel(std::string channelName);
 		~Channel();
 		/*   Setters   */
@@ -53,6 +41,7 @@ class Channel
 		/*   Getters   */
 		int			getChannelId() const;
 		std::string	getChannelName() const;
+		bool		getTopicOpAccess() const;
 		/*   Client Auth Check   */
 		bool	checkOp(std::string nickname, int change);
 		bool	checkClient(std::string nickname);
@@ -61,8 +50,8 @@ class Channel
 		void	broadcastMessage(const std::string& message, const std::string& sender);
 		/*   Client Manipulation   */
 		bool	isFull() const;
-		void	addClient(const Client& client);
-		void	addInvite(const int clientId);
+		void	addClient(Client& client);
+		void	addInvite(unsigned int clientId);
 		void	removeClient(std::string client);
 		void	setUserLimit(int limit);
 		int		getUserCount() const;
@@ -72,13 +61,10 @@ class Channel
 		std::string	getTopic() const;
 		/*   Modes   */
 		bool	checkInviteOnly();
-		bool	implementMode(char toggle, char mode);
-		bool	implementMode(char toggle, char mode, std::vector<std::string> variables);
-		/*   Passwords   */
+		bool	canClientJoin(unsigned int clientID);
+		void	modeCommand(t_message message, Client& sender);
+        void	implementMode(char toggle, char mode, std::vector<std::string> params, Client &sender);
+        /*   Passwords   */
 		void		setPassword(std::string password);
 		std::string	getPassword() const;
-		/*   Utility   */
-		unsigned int	findIdByNick(std::string nick);
-
-/////////////////*   SERVER STUFF   */////////////////
 };

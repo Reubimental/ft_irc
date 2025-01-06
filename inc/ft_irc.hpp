@@ -10,3 +10,4 @@ typedef struct s_message
     std::vector<std::string> params;
     std::string suffix;
 }   t_message;
+typedef std::vector<std::string>::iterator param_iter;

@@ -1,6 +1,6 @@
 NAME		:= ircserv
 CXX			:= c++
-CXXFALGS	:= -Wall -Wextra -Werror -std=c++98
+CXXFLAGS	:= -Wall -Wextra -Werror -std=c++98
 
 DEBUG_FLAGS := -g -DDEBUG=1
 
@@ -9,7 +9,8 @@ OBJ_DIR	:= obj/
 DEBUG_DIR := debug_obj/
 INC_DIR := inc/
 
-FILES := Channel \
+FILES := ft_irc \
+		 Channel \
 		 Client \
 		 Server \
 
@@ -45,7 +46,7 @@ $(NAME)_debug: $(DEBUG_OBJ) $(FLIBS)
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.cpp | $(OBJ_DIR:/=)
 	@printf "$(PREFIX) $(C_GRAY)COMPILING $(C_CYAN)$@$(NC)\n"
-	@$(CXX) $(CXXFALGS) $(IFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) $(IFLAGS) -c $< -o $@
 
 $(OBJ_DIR:/=):
 	@mkdir $(OBJ_DIR)
