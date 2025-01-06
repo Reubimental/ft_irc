@@ -544,7 +544,7 @@ void	Server::nickCommand(t_message message, Client& sender)
 		return ;
 	}
 	sender.setNickname(nickname);
-	if (!sender.getUsername().empty() && sender.isAuthenticated())
+	if (!sender.getUsername().empty())
 		sender.beRegistered();
 }
 
