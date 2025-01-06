@@ -165,12 +165,15 @@ void Client::pongCommand()
 }
 
 // ****************************************** TODO ************
-void Client::readSocket(struct pollfd& pollresult)
+int Client::readSocket(struct pollfd& pollresult)
 {
 
     if (pollresult.revents & POLLIN)
     {
-        _recieveBuffer.append(getInput(_connfd));
+        std::string newInput = getInput(_connfd);
+        if (newInput.size() == 0)
+            return -1;
+        _recieveBuffer.append(newInput);
         int m_len;
         while ((m_len = _recieveBuffer.find('\n')) >= 0
             || (m_len = _recieveBuffer.find('\r')) >= 0)
@@ -191,6 +194,7 @@ void Client::readSocket(struct pollfd& pollresult)
         }
         write(_connfd, send.c_str(), send.size());
     }
+    return 0;
 }
 
 void    Client::queueMessage(const std::string& message)

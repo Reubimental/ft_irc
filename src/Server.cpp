@@ -130,12 +130,15 @@ void Server::run()
 			// if new client waiting, add it
 			if (_sockets[1].revents & POLLIN) newClient();
 
+			Client* client;
 			for (socket_iter it = _sockets.begin() + 2; it < _sockets.end(); ++it)
 			{
 				std::cout << it->fd << ": " << it->revents << std::endl;
 				if (it->revents)
 				{
-					getClientBySocket(it->fd)->readSocket(*it);
+					client = getClientBySocket(it->fd);
+					if (client->readSocket(*it) < 0)
+						removeClient(*client);
 				}
 			}
 			// ping clients
@@ -216,15 +219,6 @@ unsigned int	Server::findIdByNick(std::string nick)
     return 0;
 }
 
-void    Server::removeSocket(int fd)
-{
-    for (socket_iter it = _sockets.begin(); it != _sockets.end(); ++it)
-    {
-        if (it->fd == fd)
-            _sockets.erase(it);
-    }
-}
-
 void   Server::removeClient(Client& client)
 {
     // remove from all channels
@@ -232,10 +226,10 @@ void   Server::removeClient(Client& client)
         (*it)->removeClient(client.getNickname());
 
     // remove the socket
-    removeSocket(client.getSocket());
+	close(client.getSocket());
 
     // remove the client from _clients
-    for (client_iter it = _clients.begin(); it != _clients.end(); ++it)
+    for (client_iter it = _clients.begin(); it < _clients.end(); ++it)
     {
         if (*it == &client)
 		{
