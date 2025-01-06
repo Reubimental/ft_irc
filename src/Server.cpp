@@ -306,6 +306,18 @@ void	Server::handleCommands(std::string input, Client& client)
 	}
 	if (message.params.size() == 0)
 		return ;
+
+	int authState = client.isAuthenticated() + client.isRegistered();
+	if (authState < 2)
+	{
+		if (message.params[0] == "PASS")
+			this->passCommand(message, client);
+		else if (message.params[0] == "NICK" && authState == 1)
+			this->nickCommand(message, client);
+		else if (message.params[0] == "USER" && authState == 1)
+			this->userCommand(message, client);
+		return ;
+	}
 	if (message.params[0] == "KICK")
 	{
 		this->kickCommand(message, client);
@@ -332,7 +344,7 @@ void	Server::handleCommands(std::string input, Client& client)
 	}
 	else if (message.params[0] == "USER")
 	{
-		
+		this->userCommand(message, client);
 	}
 	else if (message.params[0] == "JOIN")
 	{
@@ -508,6 +520,8 @@ void	Server::passCommand(t_message message, Client& sender)
 
 void	Server::nickCommand(t_message message, Client& sender)
 {
+	if (!sender.isAuthenticated())
+		return ;
 	if (message.params.size() < 2)
 	{
 		sender.queueMessage(ERR_NONICKNAMEGIVEN);
@@ -529,6 +543,9 @@ void	Server::nickCommand(t_message message, Client& sender)
 		sender.queueMessage(ERR_NICKNAMEINUSE(nickname));
 		return ;
 	}
+	sender.setNickname(nickname);
+	if (!sender.getUsername().empty() && sender.isAuthenticated())
+		sender.beRegistered();
 }
 
 /*
@@ -538,6 +555,8 @@ void	Server::nickCommand(t_message message, Client& sender)
 
 void	Server::userCommand(t_message message, Client& sender)
 {
+	if (!sender.isAuthenticated())
+		return ;
 	if (message.params.size() < 2)
 	{
 		sender.queueMessage(ERR_NEEDMOREPARAMS("USER"));
@@ -550,6 +569,8 @@ void	Server::userCommand(t_message message, Client& sender)
 	}
 	sender.setUsername(message.params[1]);
 	sender.setRealname(message.suffix);
+	if (!sender.getNickname().empty())
+		sender.beRegistered();
 }
 
 /*
@@ -575,7 +596,7 @@ void	Server::partCommand(t_message message, Client& sender)
 			sender.queueMessage(ERR_NOSUCHCHANNEL(message.params[i]));
 			return ;
 		}
-		if (!channel->checkClient(sender.getNickname()));
+		if (!channel->checkClient(sender.getNickname()))
 		{
 			sender.queueMessage(ERR_NOTONCHANNEL(message.params[i]));
 			return ;
