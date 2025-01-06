@@ -94,7 +94,7 @@ int Server::pollSockets()
 	for (client_iter it = _clients.begin(); it < _clients.end(); ++it)
 	{
 		int pollmode = POLLIN;
-		if ((*it)->isQueueWaiting()) {pollmode |= POLLOUT; std::cout<<"attempting queue message"<<std::endl;}
+		if ((*it)->isQueueWaiting()) pollmode |= POLLOUT;
 
 		// sockets[>1] are client fds
 	    _sockets.push_back(CREATE_POLLFD((*it)->getSocket(), pollmode));
@@ -249,17 +249,19 @@ void    Server::privmsgCommand(t_message message, Client& sender)
     {
         if ((*param)[0] == '#')
         {
+			std::cout << "Finding channel..." << std::endl;
             // get channel, send privmsg
-            Channel* chan = getChannelByName(param->substr(1));
+            Channel* chan = getChannelByName(*param);
             if (!chan)
-                sender.queueMessage(ERR_CANNOTSENDTOCHAN(*param));
-            // send message to channel
+                sender.queueMessage(ERR_CANNOTSENDTOCHAN(sender.getNickname(), *param));
+            else
+				chan->printMessage(message);
         }
         else
         {
             Client* client = getClientByNick(*param);
             if (!client)
-                sender.queueMessage(ERR_NOSUCHNICK);
+                sender.queueMessage(ERR_NOSUCHNICK(sender.getNickname()));
             else
                 client->queueMessage(message);
         }
@@ -354,7 +356,7 @@ void	Server::handleCommands(std::string input, Client& client)
 	}
 	else if (message.params[0] == "JOIN")
 	{
-		
+		this->joinCommand(message, client);
 	}
 	else if (message.params[0] == "PRIVMSG")
 	{
@@ -374,7 +376,7 @@ void	Server::handleCommands(std::string input, Client& client)
 	}
 	else
 	{
-		client.queueMessage(ERR_UNKNOWNCOMMAND(message.params[0]));
+		client.queueMessage(ERR_UNKNOWNCOMMAND(client.getNickname(), message.params[0]));
 	}
 }
 /*
@@ -388,23 +390,23 @@ void	Server::kickCommand(t_message message, Client& sender) // KICK <#channel> <
 
 	if (message.params.size() < 3)
 	{
-		sender.queueMessage(ERR_NEEDMOREPARAMS("KICK"));
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "KICK"));
 		return ;
 	}
 	channel = this->getChannelByName(message.params[1]);
 	if (!channel)
 	{
-		sender.queueMessage(ERR_NOSUCHCHANNEL(message.params[1]));
+		sender.queueMessage(ERR_NOSUCHCHANNEL(sender.getNickname(), message.params[1]));
 		return ;
 	}
 	if (!channel->checkOp(sender.getNickname(), 0))
 	{
-		sender.queueMessage(ERR_CHANOPRIVSNEEDED(message.params[1]));
+		sender.queueMessage(ERR_CHANOPRIVSNEEDED(sender.getNickname(), message.params[1]));
 		return ;
 	}
 	if (!channel->checkClient(sender.getNickname()))
 	{
-		sender.queueMessage(ERR_NOTONCHANNEL(message.params[1]));
+		sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), message.params[1]));
 		return ;
 	}
 	channel->removeClient(message.params[2]);
@@ -425,7 +427,7 @@ void	Server::inviteCommand(t_message message, Client& sender) // INVITE <nicknam
 
 	if (message.params.size() < 3)
 	{
-		sender.queueMessage(ERR_NEEDMOREPARAMS("INVITE"));
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "INVITE"));
 		return ;
 	}
 
@@ -435,27 +437,27 @@ void	Server::inviteCommand(t_message message, Client& sender) // INVITE <nicknam
 
 	if (!target)
 	{
-		sender.queueMessage(ERR_NOSUCHNICK);
+		sender.queueMessage(ERR_NOSUCHNICK(sender.getNickname()));
 		return ;
 	}
 	channel = this->getChannelByName(channelName);
 	if (!channel || !channel->checkClient(sender.getNickname()))
 	{
-		sender.queueMessage(ERR_NOTONCHANNEL(channel->getChannelName()));
+		sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), channel->getChannelName()));
 		return ;
 	}
 	if (channel->checkClient(targetName))
 	{
-		sender.queueMessage(ERR_USERONCHANNEL(targetName, channelName));
+		sender.queueMessage(ERR_USERONCHANNEL(sender.getNickname(), targetName, channelName));
 		return ;
 	}
 	if (channel->checkInviteOnly() && !channel->checkOp(sender.getNickname(), 0))
 	{
-		sender.queueMessage(ERR_CHANOPRIVSNEEDED(channelName));
+		sender.queueMessage(ERR_CHANOPRIVSNEEDED(sender.getNickname(), channelName));
 		return ;
 	}
-	target->queueMessage(RPL_INVITING(channelName, targetName));
-	sender.queueMessage(RPL_INVITING(channelName, targetName));
+	target->queueMessage(RPL_INVITING(sender.getNickname(), channelName, targetName));
+	sender.queueMessage(RPL_INVITING(sender.getNickname(), channelName, targetName));
 	channel->addInvite(this->findIdByNick(targetName));
 }
 
@@ -465,7 +467,7 @@ void	Server::topicCommand(t_message message, Client& sender) // TOPIC <#channel>
 
 	if (message.params.size() < 2)
 	{
-		sender.queueMessage(ERR_NEEDMOREPARAMS("TOPIC"));
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "TOPIC"));
 		return ;
 	}
 
@@ -474,25 +476,25 @@ void	Server::topicCommand(t_message message, Client& sender) // TOPIC <#channel>
 	channel = this->getChannelByName(channelName);
 	if (!channel || !channel->checkClient(sender.getNickname()))
 	{
-		sender.queueMessage(ERR_NOTONCHANNEL(channel->getChannelName()));
+		sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), channel->getChannelName()));
 		return ;
 	}
 	if (message.suffix.size() == 0)
 	{
 		if (channel->getTopic().size() > 0)
 		{
-			sender.queueMessage(RPL_TOPIC(channel->getChannelName(), channel->getTopic()));
+			sender.queueMessage(RPL_TOPIC(sender.getNickname(), channel->getChannelName(), channel->getTopic()));
 			return ;
 		}
 		else
 		{
-			sender.queueMessage(RPL_NOTOPIC(channel->getChannelName()));
+			sender.queueMessage(RPL_NOTOPIC(sender.getNickname(), channel->getChannelName()));
 			return ;
 		}
 	}
 	if (channel->getTopicOpAccess() && !channel->checkOp(sender.getNickname(), 0))
 	{
-		sender.queueMessage(ERR_CHANOPRIVSNEEDED(channel->getChannelName()));
+		sender.queueMessage(ERR_CHANOPRIVSNEEDED(sender.getNickname(), channel->getChannelName()));
 		return ;
 	}
 	channel->setTopic(message.suffix);
@@ -507,12 +509,12 @@ void	Server::passCommand(t_message message, Client& sender)
 {
 	if (message.params.size() < 2)
 	{
-		sender.queueMessage(ERR_NEEDMOREPARAMS("PASS"));
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "PASS"));
 		return ;
 	}
 	if (sender.isRegistered())
 	{
-		sender.queueMessage(ERR_ALREADYREGISTRED);
+		sender.queueMessage(ERR_ALREADYREGISTRED(sender.getNickname()));
 		return ;
 	}
 	std::cout << "'" << _password << "' '" << message.params[1] << "'" << std::endl;
@@ -533,7 +535,7 @@ void	Server::nickCommand(t_message message, Client& sender)
 		return ;
 	if (message.params.size() < 2)
 	{
-		sender.queueMessage(ERR_NONICKNAMEGIVEN);
+		sender.queueMessage(ERR_NONICKNAMEGIVEN(sender.getNickname()));
 		return ;
 	}
 
@@ -543,13 +545,13 @@ void	Server::nickCommand(t_message message, Client& sender)
 	{
 		if (!std::isalnum(*it) && !(*it == '_'))
 		{
-			sender.queueMessage(ERR_ERRONEUSNICKNAME(nickname));
+			sender.queueMessage(ERR_ERRONEUSNICKNAME(sender.getNickname(), nickname));
 			return ;
 		}
 	}
 	if (getClientByNick(nickname))
 	{
-		sender.queueMessage(ERR_NICKNAMEINUSE(nickname));
+		sender.queueMessage(ERR_NICKNAMEINUSE(sender.getNickname(), nickname));
 		return ;
 	}
 	sender.setNickname(nickname);
@@ -566,18 +568,18 @@ void	Server::userCommand(t_message message, Client& sender)
 {
 	if (sender.isRegistered())
 	{
-		sender.queueMessage(ERR_ALREADYREGISTRED);
+		sender.queueMessage(ERR_ALREADYREGISTRED(sender.getNickname()));
 	}
 	if (!sender.isAuthenticated())
 		return ;
 	if (message.params.size() < 4 && message.suffix.size() != 0)
 	{
-		sender.queueMessage(ERR_NEEDMOREPARAMS("USER"));
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "USER"));
 		return ;
 	}
 	if (sender.isRegistered())
 	{
-		sender.queueMessage(ERR_ALREADYREGISTRED);
+		sender.queueMessage(ERR_ALREADYREGISTRED(sender.getNickname()));
 		return ;
 	}
 	sender.setUsername(message.params[1]);
@@ -598,7 +600,7 @@ void	Server::partCommand(t_message message, Client& sender)
 
 	if (message.params.size() < 2)
 	{
-		sender.queueMessage(ERR_NEEDMOREPARAMS("PART"));
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "PART"));
 		return ;
 	}
 	for (size_t i = 1; i != message.params.size(); i++)
@@ -606,12 +608,12 @@ void	Server::partCommand(t_message message, Client& sender)
 		channel = this->getChannelByName(message.params[i]);
 		if (!channel)
 		{
-			sender.queueMessage(ERR_NOSUCHCHANNEL(message.params[i]));
+			sender.queueMessage(ERR_NOSUCHCHANNEL(sender.getNickname(), message.params[i]));
 			return ;
 		}
 		if (!channel->checkClient(sender.getNickname()))
 		{
-			sender.queueMessage(ERR_NOTONCHANNEL(message.params[i]));
+			sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), message.params[i]));
 			return ;
 		}
 		channel->removeClient(sender.getNickname());
@@ -622,11 +624,11 @@ void	Server::partCommand(t_message message, Client& sender)
 	ERR_NEEDMOREPARAMS              ERR_NOSUCHCHANNEL
     ERR_NOTONCHANNEL
 */
-vector<pair<std::string, std::string>> Server::joinTokenizer(const std::string& channels_str, const std::string& passwords_str, Client& sender)
+std::vector<std::pair<std::string, std::string> > Server::joinTokenizer(const std::string& channels_str, const std::string& passwords_str, Client& sender)
 {
 	std::vector<std::string> channels;
 	std::vector<std::string> passwords;
-	std::vector<std::pair<std::string, std::string>> tokenized;
+	std::vector<std::pair<std::string, std::string> > tokenized;
 
 	std::istringstream channels_stream(channels_str);
 	std::string channel;
@@ -658,14 +660,23 @@ vector<pair<std::string, std::string>> Server::joinTokenizer(const std::string& 
 	return (tokenized);
 }
 
+void	Server::joinedChannel(Channel& channel, Client& sender, t_message joinMessage)
+{
+	channel.printMessage(joinMessage);
+	sender.queueMessage(RPL_TOPIC(sender.getNickname(), channel.getChannelName(), channel.getTopic()));
+	sender.queueMessage(RPL_NAMREPLY(sender.getNickname(), channel.getChannelName(), channel.getAllUsers()));
+}
+
 void	Server::joinCommand(t_message message, Client& sender)
 {
-	vector<pair<std::string, std::string>> tokenizedInput;
+	std::vector<std::pair<std::string, std::string> > tokenizedInput;
 	std::string	channels;
+
+	message.prefix = sender.getNickname();
 
 	if (message.params.size() < 2)
 	{
-		sender.queueMessage(ERR_NEEDMOREPARAMS("JOIN"));
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "JOIN"));
 		return ;
 	}
 	channels = message.params[1];
@@ -673,35 +684,37 @@ void	Server::joinCommand(t_message message, Client& sender)
 	tokenizedInput = this->joinTokenizer(channels, passwords, sender);
 	for (size_t i = 0; i < tokenizedInput.size(); i++)
 	{
-		if (tokenizedInput[i].first.at(0) != '#')
+		if (tokenizedInput[i].first[0] != '#')
 		{
-			sender.queueMessage(ERR_NOSUCHCHANNEL());
+			sender.queueMessage(ERR_NOSUCHCHANNEL(sender.getNickname(), tokenizedInput[i].first));
 			return ;
 		}
 		Channel* channel = this->getChannelByName(tokenizedInput[i].first);
 		if (!channel)
 		{
+			std::cout << "Creating channel: " << tokenizedInput[i].first << std::endl;
 			Channel* newChannel = new Channel(tokenizedInput[i].first, &sender);
 			this->_channels.push_back(newChannel);
+			joinedChannel(*newChannel, sender, message);
 			return ;
 		}
 		if (channel->checkInviteOnly() && !(channel->canClientJoin(sender.getClientId())))
 		{
-			sender.queueMessage(ERR_INVITEONLYCHAN(tokenizedInput[i].first));
+			sender.queueMessage(ERR_INVITEONLYCHAN(sender.getNickname(), tokenizedInput[i].first));
 			return ;
 		}
-		if (channel->getPassword() && channel->getPassword() != tokenizedInput[i].second)
+		if (channel->getPassword().size() > 0 && channel->getPassword() != tokenizedInput[i].second)
 		{
-			sender.queueMessage(ERR_BADCHANNELKEY(tokenizedInput[i].first));
+			sender.queueMessage(ERR_BADCHANNELKEY(sender.getNickname(), tokenizedInput[i].first));
 			return ;
 		}
-		if (channel->getUserLimit() && channel->getUserCount >= channel->getUserLimit && channel->checkOp(sender.getNickname(), 0))
+		if (channel->getUserLimit() && channel->getUserCount() >= channel->getUserLimit() && channel->checkOp(sender.getNickname(), 0))
 		{
-			sender.queueMessage(ERR_CHANNELISFULL(tokenizedInput[i].first));
+			sender.queueMessage(ERR_CHANNELISFULL(sender.getNickname(), tokenizedInput[i].first));
 			return ;
 		}
 		channel->addClient(sender);
-		sender.queueMessage(RPL_TOPIC(tokenizedInput[i].first, channel->getTopic()));
+		joinedChannel(*channel, sender, message);
 	}
 	return ;
 }
@@ -716,4 +729,8 @@ Numeric Replies:
            ERR_INVITEONLYCHAN*               ERR_BADCHANNELKEY*
            ERR_CHANNELISFULL*
            RPL_TOPIC
+
+		   haha also RPL_NAMREPLY :)
+
+		   and also possible RPL_NOTOPIC cause fuck you :D
 */

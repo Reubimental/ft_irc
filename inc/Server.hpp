@@ -66,10 +66,13 @@ public:
 	void    modeCommand     (t_message message, Client& sender);
 	void    partCommand     (t_message message, Client& sender);
 
+
 	// literally nothing command
 	void    pongCommand     (t_message message, Client& sender);
 
-	vector<pair<std::string, std::string>> joinTokenizer(const std::string& channels_str, const std::string& passwords_str);
+	// COMMAND HELPERS
+	void	joinedChannel	(Channel& channel, Client& sender, t_message joinMessage);
+	std::vector<std::pair<std::string, std::string> > joinTokenizer(const std::string& channels_str, const std::string& passwords_str, Client& sender);
 };
 
 // { "KICK",

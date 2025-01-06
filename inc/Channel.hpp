@@ -25,12 +25,12 @@ class Channel
 		std::string					_channelName;
 		std::string					_channelTopic;
 		/*   MODES   */
-		bool		_inviteOnly;
-		bool		_topicOpAccess;
-		std::string	_password;
-		unsigned int			_userLimit;
+		bool			_inviteOnly;
+		bool			_topicOpAccess;
+		std::string		_password;
+		unsigned int	_userLimit;
 
-        void modeOperator(std::vector<std::__cxx11::string> &params, Client &sender, char toggle, char &mode);
+        void modeOperator(std::vector<std::string> &params, Client &sender, char toggle, char &mode);
 
 	public:
 		Channel(std::string channelName, Client* sender);
@@ -42,12 +42,12 @@ class Channel
 		int			getChannelId() const;
 		std::string	getChannelName() const;
 		bool		getTopicOpAccess() const;
+		std::string getAllUsers() const;
 		/*   Client Auth Check   */
 		bool	checkOp(std::string nickname, int change);
 		bool	checkClient(std::string nickname);
 		/*   Print sent messages   */
-		void	printMessage(const std::string& message, const std::string& sender);
-		void	broadcastMessage(const std::string& message, const std::string& sender);
+		void	printMessage(t_message& message);
 		/*   Client Manipulation   */
 		bool	isFull() const;
 		void	addClient(Client& client);
