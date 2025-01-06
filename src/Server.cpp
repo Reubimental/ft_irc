@@ -525,16 +525,30 @@ void	Server::nickCommand(t_message message, Client& sender)
 	}
 	if (getClientByNick(nickname))
 	{
-		sender.queueMessage(ERR_NICKNAMEINUSE(nickname))
+		sender.queueMessage(ERR_NICKNAMEINUSE(nickname));
 		return ;
 	}
 }
 
 /*
-
 	ERR_NONICKNAMEGIVEN             ERR_ERRONEUSNICKNAME
     ERR_NICKNAMEINUSE
+*/
 
+void	Server::userCommand(t_message message, Client& sender)
+{
+	if (message.params.size() < 2)
+	{
+		sender.queueMessage(ERR_NEEDMOREPARAMS("USER"));
+		return ;
+	}
+
+}
+
+/*
+	ERR_NEEDMOREPARAMS              ERR_ALREADYREGISTRED
+	 Command: USER
+   Parameters: <username> <hostname> <servername> <realname>
 */
 /*
 	The token index that is multi-string for each:
