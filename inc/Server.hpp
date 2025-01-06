@@ -18,16 +18,21 @@ private:
 	void _Server(int port);
 	void removeSocket(int fd);
 	void removeClient(Client& client);
+    int  pollSockets();
 	
 	int							_sockfd;
-	std::vector<Client>			_clients; // needs to change to vector<Client*>
-	std::vector<Channel>		_channels;
+	std::vector<Client*>		_clients;
+	std::vector<Channel*>		_channels;
 	std::vector<struct pollfd>	_sockets;
 	int							_numSockets;
 	std::string					_password;
 	std::vector<std::string*>	_nicknames;
 	std::vector<std::string>	_motd;
 
+    typedef std::vector<Client*>::iterator client_iter;
+    typedef std::vector<Channel*>::iterator channel_iter;
+    typedef std::vector<struct pollfd>::iterator socket_iter;
+    typedef std::vector<std::string*>::iterator nick_iter;
 
 public:
 	Server();
@@ -39,10 +44,11 @@ public:
 	void run();
 
 	void doCommand(const std::string& cmdstr, Client&);
-	void newClient(struct pollfd& pollresult);
+	void newClient();
 	bool nicknameAvailable(const std::string& nick);
 	Channel* getChannelByName(const std::string& channel);
 	Client* getClientByNick(const std::string& nick);
+    Client* getClientBySocket(int fd);
 	unsigned int	findIdByNick(std::string nick);
 	void		handleCommands(std::string input, Client& client);
 

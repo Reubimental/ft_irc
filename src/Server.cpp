@@ -10,6 +10,8 @@
 #include <cstring>
 #include <unistd.h>
 
+#define CREATE_POLLFD(_f, _e) (struct pollfd){.fd = (_f), .events = static_cast<short>(_e), .revents = 0}
+
 void Server::_Server(int port)
 {
     struct sockaddr_in servAddr;
@@ -23,7 +25,7 @@ void Server::_Server(int port)
     std::memset(&servAddr, 0, sizeof(servAddr));
     servAddr.sin_family = AF_INET;
     servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servAddr.sin_port = port;
+    servAddr.sin_port = htons(port);
 
     if (bind(_sockfd, (struct sockaddr *)&servAddr, sizeof(servAddr)))
     {
@@ -36,6 +38,8 @@ void Server::_Server(int port)
         close(_sockfd);
         throw std::runtime_error("Error listening for connections");
     }
+
+	std::cout << "Listening on port " << port << std::endl;
 }
 
 Server::Server()
@@ -56,8 +60,18 @@ Server::Server(int port, const std::string& password)
     _Server(port);
 }
 
+// note: it's best practice to avoid having more than one allocated pointer
+// in a class, but I don't wanna implement something else 💀
+// there also shouldn't be any explicit errors in our code inside the
+// deconstructor, so it *shouldn't* leak any memory ever
 Server::~Server()
 {
+	for (client_iter cit = _clients.begin(); cit < _clients.end(); ++cit)
+		delete *cit;
+	
+	for (channel_iter chit = _channels.begin(); chit < _channels.end(); ++chit)
+		delete *chit;
+
     close(_sockfd);
     for (std::vector<struct pollfd>::iterator it = _sockets.begin();
             it != _sockets.end(); ++it)
@@ -66,30 +80,91 @@ Server::~Server()
     }
 }
 
-void Server::newClient(struct pollfd& pollresult)
+int Server::pollSockets()
 {
-    if (pollresult.revents & POLLIN)
-    {
-        std::cout << "Attempting new connection..." << std::endl;
-        struct sockaddr_in cli;
-        unsigned int len = sizeof(cli);
-        int connfd = accept(_sockfd, (struct sockaddr *)&cli, &len);
-        if (connfd < 0)
-        {
-            std::cout << "Connection failed" << std::endl;
-            return ;
-        }
-        std::cout << "Connection success!" << std::endl;
-        _clients.push_back(Client(this, connfd));
-        _nicknames.push_back(_clients[_clients.size() - 1].getNicknameAddr());
-        _sockets.push_back((struct pollfd){.fd = connfd, .events = 0, .revents = 0});
-    }
+	_sockets.clear();
+
+	// sockets[0] is STDIN
+	_sockets.push_back(CREATE_POLLFD(0, POLLIN));
+	
+	// sockets[1] is _sockfd/listen
+	_sockets.push_back(CREATE_POLLFD(_sockfd, POLLIN));
+	for (client_iter it = _clients.begin(); it < _clients.end(); ++it)
+	{
+		int pollmode = POLLIN;
+		if ((*it)->isQueueWaiting()) pollmode |= POLLOUT;
+
+		// sockets[>1] are client fds
+	    _sockets.push_back(CREATE_POLLFD((*it)->getSocket(), pollmode));
+	}
+	return poll(_sockets.data(), _sockets.size(), 60000);
+}
+
+void Server::run()
+{
+	int numEvent;
+
+	while (1)
+	{
+		// gets all pollfds and runs poll
+		numEvent = pollSockets();
+
+		std::cout << numEvent << std::endl;
+
+		if (numEvent < 0) // poll error
+		{
+			std::cout << "POLL ERROR" << std::endl;
+			break ;
+		}
+
+		if (numEvent == 0) // poll timeout; 60 seconds without poll
+		{
+			std::cout << "POLL TIMEOUT" << std::endl;
+			// ping clients
+		}
+		else // poll return!
+		{
+			std::cout << "POLL RETURNED" << std::endl;
+			// if stdin has data, quit -- maybe add input handling later?
+			if (_sockets[0].revents & POLLIN) {std::cin.ignore(); break ;}
+			// if new client waiting, add it
+			if (_sockets[0].revents & POLLIN) newClient();
+
+			for (socket_iter it = _sockets.begin() + 2; it < _sockets.end(); ++it)
+			{
+				std::cout << it->fd << ": " << it->revents << std::endl;
+				break ;
+				if (it->revents)
+				{
+					getClientBySocket(it->fd)->readSocket(*it);
+				}
+			}
+			// ping clients
+		}
+	}
+
+}
+
+void Server::newClient()
+{
+	std::cout << "Attempting new connection..." << std::endl;
+	struct sockaddr_in cli;
+	unsigned int len = sizeof(cli);
+	int connfd = accept(_sockfd, (struct sockaddr *)&cli, &len);
+	if (connfd < 0)
+	{
+		std::cout << "Connection failed" << std::endl;
+		return ;
+	}
+	std::cout << "Connection success!" << std::endl;
+	_clients.push_back(new Client(this, connfd));
+	_nicknames.push_back((*_clients[_clients.size() - 1]).getNicknameAddr());
+	_sockets.push_back((struct pollfd){.fd = connfd, .events = 0, .revents = 0});
 }
 
 bool    Server::nicknameAvailable(const std::string& nick)
 {
-    for (std::vector<std::string*>::iterator it = _nicknames.begin();
-            it != _nicknames.end(); ++it)
+    for (nick_iter it = _nicknames.begin(); it != _nicknames.end(); ++it)
     {
         if (**it == nick)
             return false;
@@ -99,32 +174,43 @@ bool    Server::nicknameAvailable(const std::string& nick)
 
 Channel* Server::getChannelByName(const std::string& channel)
 {
-    for (std::vector<Channel>::iterator it = _channels.begin();
+    for (channel_iter it = _channels.begin();
             it != _channels.end(); ++it)
     {
-        if (it->getChannelName() == channel)
-            return &(*it);
+        if ((*it)->getChannelName() == channel)
+            return *it;
     }
     return NULL;
 }
 
 Client* Server::getClientByNick(const std::string& nick)
 {
-    for (std::vector<Client>::iterator it = _clients.begin();
+    for (client_iter it = _clients.begin();
             it != _clients.end(); ++it)
     {
-        if (it->getNickname() == nick)
-            return &(*it);
+        if ((*it)->getNickname() == nick)
+            return *it;
+    }
+    return NULL;
+}
+
+Client* Server::getClientBySocket(int socket)
+{
+	for (client_iter it = _clients.begin();
+            it != _clients.end(); ++it)
+    {
+        if ((*it)->getSocket() == socket)
+            return *it;
     }
     return NULL;
 }
 
 unsigned int	Server::findIdByNick(std::string nick)
 {
-	for (std::vector<Client>::const_iterator it = this->_clients.begin(); it != this->_clients.end(); it++)
+	for (client_iter it = this->_clients.begin(); it != this->_clients.end(); it++)
 	{
-		if (nick == it->getNickname())
-			return (it->getClientId());
+		if (nick == (*it)->getNickname())
+			return ((*it)->getClientId());
 	}
 	std::cout << "Nickname does not exist in database." << std::endl;
     return 0;
@@ -132,8 +218,7 @@ unsigned int	Server::findIdByNick(std::string nick)
 
 void    Server::removeSocket(int fd)
 {
-    for (std::vector<struct pollfd>::iterator it = _sockets.begin();
-            it != _sockets.end(); ++it)
+    for (socket_iter it = _sockets.begin(); it != _sockets.end(); ++it)
     {
         if (it->fd == fd)
             _sockets.erase(it);
@@ -143,19 +228,20 @@ void    Server::removeSocket(int fd)
 void   Server::removeClient(Client& client)
 {
     // remove from all channels
-    for (std::vector<Channel>::iterator it = _channels.begin();
-            it != _channels.end(); ++it)
-        it->removeClient(client.getNickname());
+    for (channel_iter it = _channels.begin(); it != _channels.end(); ++it)
+        (*it)->removeClient(client.getNickname());
 
     // remove the socket
     removeSocket(client.getSocket());
 
     // remove the client from _clients
-    for (std::vector<Client>::iterator it = _clients.begin();
-            it != _clients.end(); ++it)
+    for (client_iter it = _clients.begin(); it != _clients.end(); ++it)
     {
-        if (&(*it) == &client)
+        if (*it == &client)
+		{
+			delete *it;
             _clients.erase(it);
+		}
     }
 }
 
@@ -164,7 +250,7 @@ void    Server::privmsgCommand(t_message message, Client& sender)
     message.prefix = sender.getNickname();
 
     // loop through parameters, skipping the first one
-    for (std::vector<std::string>::iterator param = message.params.begin() + 1;
+    for (param_iter param = message.params.begin() + 1;
             param != message.params.end(); ++param)
     {
         if ((*param)[0] == '#')
@@ -201,7 +287,6 @@ void    Server::pongCommand(t_message message, Client& sender)
 void	Server::handleCommands(std::string input, Client& client)
 {
 	std::istringstream iss(input);
-	std::vector<std::string>::iterator it;
 	std::string	token;
 	t_message	message;
 

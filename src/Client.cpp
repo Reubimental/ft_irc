@@ -114,7 +114,7 @@ time_t Client::getPingSentAt() const
 
 bool Client::isQueueWaiting() const
 {
-    return _sendBuffer.size();
+    return _sendBuffer.size() != 0;
 }
 
 void Client::authenticate()
