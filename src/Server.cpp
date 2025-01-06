@@ -326,11 +326,11 @@ void	Server::handleCommands(std::string input, Client& client)
 	}
 	else if (message.params[0] == "PASS")
 	{
-		
+		this->passCommand(message, client);
 	}
 	else if (message.params[0] == "NICK")
 	{
-		
+		this->nickCommand(message, client);
 	}
 	else if (message.params[0] == "USER")
 	{
@@ -495,7 +495,7 @@ void	Server::passCommand(t_message message, Client& sender)
 		sender.queueMessage(ERR_ALREADYREGISTRED);
 		return ;
 	}
-	if (message.params[0] == this->_password)
+	if (message.params[1] == this->_password)
 	{
 		sender.authenticate();
 		return ;
@@ -508,13 +508,32 @@ void	Server::passCommand(t_message message, Client& sender)
 
 void	Server::nickCommand(t_message message, Client& sender)
 {
-	
+	std::string nickname = message.params[1];
+
+	if (message.params.size() < 2)
+	{
+		sender.queueMessage(ERR_NONICKNAMEGIVEN);
+		return ;
+	}
+	for (std::string::iterator it = nickname.begin(); it != nickname.end(); ++i)
+	{
+		if (!std::isalnum(*it) && !*it == '_')
+		{
+			sender.queueMessage(ERR_ERRONEUSNICKNAME(nickname));
+			return ;
+		}
+	}
+	if (getClientByNick(nickname))
+	{
+		sender.queueMessage(ERR_NICKNAMEINUSE(nickname))
+		return ;
+	}
 }
 
 /*
 
 	ERR_NONICKNAMEGIVEN             ERR_ERRONEUSNICKNAME
-    ERR_NICKNAMEINUSE               ERR_NICKCOLLISION
+    ERR_NICKNAMEINUSE
 
 */
 /*
