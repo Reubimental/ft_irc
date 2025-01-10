@@ -74,7 +74,7 @@ std::string Channel::getAllUsers() const
 
 	for (std::vector<Client*>::const_iterator it = _clients.begin(); it < _clients.end(); ++it)
 	{
-		nicks.append(std::string("@").append((*it)->getNickname()));
+		nicks.append((*it)->getNickname());
 		if (it + 1 < _clients.end())
 			nicks.append(" ");
 	}
