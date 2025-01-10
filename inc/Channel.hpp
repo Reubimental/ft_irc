@@ -30,7 +30,7 @@ class Channel
 		std::string		_password;
 		unsigned int	_userLimit;
 
-        void modeOperator(std::vector<std::string> &params, Client &sender, char toggle, char &mode);
+        void modeOperator(std::string params, Client &sender, char toggle);
 
 	public:
 		Channel(std::string channelName, Client* sender);
@@ -56,15 +56,15 @@ class Channel
 		void	removeClient(std::string clientNickname);
 		void	setUserLimit(int limit);
 		int		getUserCount() const;
-		int		getUserLimit() const;
+		unsigned int		getUserLimit() const;
 		/*   Topic   */
 		void		setTopic(const std::string& topic);
 		std::string	getTopic() const;
 		/*   Modes   */
 		bool	checkInviteOnly();
 		bool	canClientJoin(unsigned int clientID);
-		void	modeCommand(t_message message, Client& sender);
-        void	implementMode(char toggle, char mode, std::vector<std::string> params, Client &sender);
+        void	implementMode(char toggle, char mode, std::string params, Client &sender);
+		void	modeIs(Client &sender);
         /*   Passwords   */
 		void		setPassword(std::string password);
 		std::string	getPassword() const;

@@ -157,7 +157,7 @@ int	Channel::getUserCount() const
 	return (this->_clients.size());
 }
 
-int	Channel::getUserLimit() const
+unsigned int	Channel::getUserLimit() const
 {
 	return (this->_userLimit);
 }
@@ -172,7 +172,7 @@ std::string	Channel::getTopic() const
 	return (this->_channelTopic);
 }
 
-void	Channel::implementMode(char toggle, char mode, std::vector<std::string> params, Client& sender)
+void	Channel::implementMode(char toggle, char mode, std::string params, Client& sender)
 {
 	switch(mode)
 	{
@@ -182,7 +182,6 @@ void	Channel::implementMode(char toggle, char mode, std::vector<std::string> par
 				this->_inviteOnly = false;
 			else if (toggle == '+')
 				this->_inviteOnly = true;
-			sender.queueMessage(RPL_CHANNELMODEIS(sender.getNickname(), _channelName, mode, _inviteOnly));
 			break ;
 
 		case('t'): // Set/Remove The ability to use TOPIC command to Operator Only.
@@ -191,7 +190,6 @@ void	Channel::implementMode(char toggle, char mode, std::vector<std::string> par
 				this->_topicOpAccess = false;
 			else if (toggle == '+' && !this->_topicOpAccess)
 				this->_topicOpAccess = true;
-			sender.queueMessage(RPL_CHANNELMODEIS(sender.getNickname(), _channelName, mode, _topicOpAccess));
 			break ;
 
 		case('k'): // Set/Remove the channel key (password)
@@ -199,8 +197,7 @@ void	Channel::implementMode(char toggle, char mode, std::vector<std::string> par
 			if (toggle == '-' && !this->getPassword().empty())
 				this->getPassword().clear();
 			else if (toggle == '+')
-				this->setPassword(params[0]);
-			sender.queueMessage(RPL_CHANNELMODEIS(sender.getNickname(), _channelName, mode, (_password.size() != 0)));
+				this->setPassword(params);
 			break ;
 
 		case('o'): // Give/Take Operator privilege
@@ -210,24 +207,21 @@ void	Channel::implementMode(char toggle, char mode, std::vector<std::string> par
 
         case('l'): // Set/Remove user limit on Channel
 
-			if (this->getUserLimit())
+			if (toggle == '-')
 			{
-				if (toggle == '-')
+				this->setUserLimit(0);
+			}
+			else if (toggle == '+')
+			{
+				char *end;
+				int newLimit = std::strtol(params.c_str(), &end, 10);
+				if (*end == '\0')
 				{
-					this->setUserLimit(0);
-					// sender recieves RPL_CHANNELMODEIS
+					this->setUserLimit(newLimit);
 				}
-				else if (toggle == '+')
+				else
 				{
-					char *end;
-					int newLimit = std::strtol(params[0].c_str(), &end, 10);
-					if (!end)
-					{
-						this->setUserLimit(newLimit);
-						// sender recieves RPL_CHANNELMODEIS
-					}
-					else
-					{} // sender recieves ??? I feel like this should have an error, but I can't find what applies
+					std::cout << "Error: Failed to set User Limit. Please check you have correctly entered a number." << std::endl;
 				}
 			}
 			break ;
@@ -237,54 +231,51 @@ void	Channel::implementMode(char toggle, char mode, std::vector<std::string> par
 	}
 }
 
-void Channel::modeOperator(std::vector<std::string> &params, Client &sender, char toggle, char &mode)
+void Channel::modeOperator(std::string params, Client &sender, char toggle)
 {
-    if (params.size() < 1)
+    if (!params)
     {
         sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "MODE"));
 		return;
     }
     if (toggle == '-')
     {
-        for (std::vector<std::string>::iterator opNick = params.begin(); opNick != params.end(); ++opNick)
-        {
-            for (std::vector<Client*>::iterator cit = _operators.begin(); cit != _operators.end(); ++cit)
-            {
-                if ((*cit)->getNickname() == *opNick)
-                {
-                    _operators.erase(cit);
-                    break;
-                }
-            }
-        }
+		for (std::vector<Client*>::iterator cit = this->_operators.begin(); cit != this->_operators.end(); ++cit)
+		{
+			if ((*cit)->getNickname() == params)
+			{
+				this->_operators.erase(cit);
+				break ;
+			}
+			else if (cit == this->_operators.end())
+			{
+				sender.queueMessage(ERR_NOSUCHNICK(sender.getNickname()));
+			}
+		}
     }
     else if (toggle == '+')
     {
-		for (std::vector<std::string>::iterator opNick = params.begin(); opNick != params.end(); ++opNick)
-        {
-			bool willAdd = true;
-            for (std::vector<Client*>::iterator opit = _operators.begin(); opit != _operators.end(); ++opit)
-            {
-                if ((*opit)->getNickname() == *opNick)
-                {
-					willAdd = false;
-                    break;
-                }
-            }
-			if (willAdd)
+		bool willAdd = true;
+		for (std::vector<Client*>::iterator opit = _operators.begin(); opit != _operators.end(); ++opit)
+		{
+			if ((*opit)->getNickname() == *params)
 			{
-				for (std::vector<Client*>::iterator cit = _clients.begin(); cit != _clients.end(); ++cit)
+				willAdd = false;
+				break;
+			}
+		}
+		if (willAdd)
+		{
+			for (std::vector<Client*>::iterator cit = _clients.begin(); cit != _clients.end(); ++cit)
+			{
+				if ((*cit)->getNickname() == *opNick)
 				{
-					if ((*cit)->getNickname() == *opNick)
-					{
-						_operators.push_back(*cit);
-						break ;
-					}
+					_operators.push_back(*cit);
+					break ;
 				}
 			}
         }
     }
-    sender.queueMessage(RPL_CHANNELMODEIS(sender.getNickname(), _channelName, mode, "There are " << _operators.size() << " operators"));
 }
 
 void	Channel::setPassword(std::string password)
@@ -310,20 +301,26 @@ bool Channel::canClientJoin(unsigned int clientID)
 	return (it != _invited.end());
 }
 
-void Channel::modeCommand(t_message message, Client &sender)
+void	Channel::modeIs(Client &sender)
 {
-	char toggle = 0;
-	char mode;
-	
-	if (message.params[1].size() == 1)
-		mode = message.params[1][0];
-	else if (message.params[1].size() == 2)
+	std::string mode == "+";
+	std::string details == "";
+	int userLimit = this->getUserLimit();
+
+	if (this->checkInviteOnly)
+		mode << "i";
+	if (this->getPassword())
+		mode << "k";
+	if (userLimit != 0)
+		mode << "l";
+	mode << "o";
+	if (this->getTopicOpAccess())
+		mode << "t";
+	if (userLimit != 0)
+		details << userLimit;
+	for (std::vector<Client *>::iterator it = this->_operators.begin(); it != this->_operators.end(); ++it)
 	{
-		toggle = message.params[1][0];
-		mode = message.params[1][1];
+		details << " " << (*it)->getNickname();
 	}
-	else
-		return ;
-	std::vector<std::string> params(message.params.begin() + 2, message.params.end());
-	implementMode(toggle, mode, params, sender);
+	sender.queueMessage(RPL_CHANNELMODEIS(sender.getNickname(), this->getChannelName(), mode, details));
 }

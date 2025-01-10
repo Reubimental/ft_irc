@@ -341,7 +341,7 @@ void	Server::handleCommands(std::string input, Client& client)
 	}
 	else if (message.params[0] == "MODE")
 	{
-		
+		this->modeCommand(message, client);
 	}
 	else if (message.params[0] == "PASS")
 	{
@@ -369,7 +369,7 @@ void	Server::handleCommands(std::string input, Client& client)
 	}
 	else if (message.params[0] == "PART")
 	{
-		
+		this->partCommand(message, client);
 	}
 	else if (message.params[0] == "QUIT")
 	{
@@ -709,7 +709,7 @@ void	Server::joinCommand(t_message message, Client& sender)
 			sender.queueMessage(ERR_BADCHANNELKEY(sender.getNickname(), tokenizedInput[i].first));
 			return ;
 		}
-		if (channel->getUserLimit() && channel->getUserCount() >= channel->getUserLimit() && channel->checkOp(sender.getNickname(), 0))
+		if (channel->getUserLimit() > 0 && channel->getUserCount() >= channel->getUserLimit() && channel->checkOp(sender.getNickname(), 0))
 		{
 			sender.queueMessage(ERR_CHANNELISFULL(sender.getNickname(), tokenizedInput[i].first));
 			return ;
@@ -734,4 +734,111 @@ Numeric Replies:
 		   haha also RPL_NAMREPLY :)
 
 		   and also possible RPL_NOTOPIC cause fuck you :D
+*/
+
+void	Server::modeCommand(t_message message, Client& sender)
+{
+	Channel*	channel;
+	char		toggle;
+	std::vector<std::pair<char, std::string> >	tokenInput;
+	
+	if (message.params.size() < 1)
+	{
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "MODE"));
+		return ;
+	}
+	channel = this->getChannelByName(message.params[0]);
+	if (!channel)
+	{
+		sender.queueMessage(ERR_NOSUCHCHANNEL(sender.getNickname(), message.params[0]));
+		return ;
+	}
+	if (!channel->checkClient(sender.getNickname()))
+	{
+		sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), channel->getChannelName()));
+		return ;
+	}
+	if (message.params.size() > 1)
+	{
+		if (!channel->checkOp(sender.getNickname()))
+		{
+			sender.queueMessage(ERR_CHANOPRIVSNEEDED(sender.getNickname(), channel->getChannelName()));
+			return ;
+		}
+		tokenInput = modeTokenizer(toggle, *channel, sender, message.params);
+		if (tokenInput)
+		{
+			for (std::vector<std::pair<char, std::string> >::iterator it = tokenInput.begin(); it != tokenInput.end(); ++it)
+			{
+				channel->implementMode(toggle, it->first, it->second, sender);
+			}
+		}
+	}
+	channel->modeIs(sender);
+}
+
+std::vector<std::pair<char, std::string> > Server::modeTokenizer(char& toggle, Channel& channel, Client& sender, std::vector<std::string> params)
+{
+	std::vector<char> mode;
+	std::vector<std::string> parameters;
+	std::vector<std::pair<char, std::string> >	tokenized;
+	std::vector<char> valid = {'i', 't', 'o', 'l', 'k'};
+
+	for (std::string::iterator it = params[1].begin(); it != params[1].end(); ++it)
+	{
+		mode.push_back(*it);
+	}
+
+	for (std::vector<std::string>::iterator sit = params.begin() + 2; it != params.end(); ++it)
+	{
+		parameters.push_back(*sit);
+	}
+
+	if (mode[0] == '-' || mode[0] == '+')
+	{
+		toggle = mode[0];
+		mode.erase(mode.begin());
+	}
+	if (mode.size() == 0)
+	{
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "MODE"));
+		return (tokenizer);
+	}
+	for (std::vector<char>::iterator mit = mode.begin(); mit != mode.end(); )
+	{
+		if (!std::find(valid.begin(), valid.end(), *mit))
+		{
+			sender.queueMessage(ERR_UNKNOWNMODE(sender.getNickname(), *mit));
+			mit = mode.erase(mit);
+		}
+		else if (*mit == 'i' || *mit == 't' || (toggle == '-' && (*mit == 'k' || *mit == 'l')))
+		{
+			channel.implementMode(toggle, *mit, params, sender);
+			mit = mode.erase(mit);
+		}
+		else
+			++mit;
+	}
+	if (mode.size() != parameters.size())
+	{
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "MODE"));
+		return (tokenized);
+	}
+	std::vector<char>::iterator cit = mode.begin();
+	std::vector<std::string>::iterator pit = parameters.begin();
+	for (; cit != mode.end() && pit != parameters.end(); ++cit, ++pit)
+	{
+		tokenized.push_back(std::make_pair(*cit, *pit));
+	}
+	return (tokenized);
+}
+
+/*
+Command: MODE
+	Parameters: <channel> {[+|-]|o|i|t|l|k} [<limit>] [<user>]
+
+			ERR_NEEDMOREPARAMS*              RPL_CHANNELMODEIS
+        	ERR_CHANOPRIVSNEEDED*            ERR_NOSUCHNICK
+        	ERR_NOTONCHANNEL*                ERR_KEYSET
+        	ERR_UNKNOWNMODE                 ERR_NOSUCHCHANNEL*
 */

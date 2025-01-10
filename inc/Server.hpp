@@ -73,6 +73,7 @@ public:
 	// COMMAND HELPERS
 	void	joinedChannel	(Channel& channel, Client& sender, t_message joinMessage);
 	std::vector<std::pair<std::string, std::string> > joinTokenizer(const std::string& channels_str, const std::string& passwords_str, Client& sender);
+	std::vector<std::pair<char, std::string> > modeTokenizer(char& toggle, Channel& channel, Client& sender, std::vector<std::string> params);
 };
 
 // { "KICK",

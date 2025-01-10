@@ -34,7 +34,7 @@
 #define ERR_ALREADYREGISTRED(user)              IRC_NUMREPLY("462 " << user << " :You may not register")
 
 // modes
-#define RPL_CHANNELMODEIS(user, channel, mode, mode_params)   IRC_NUMREPLY("324 " << user << " " << channel << " " << mode << " " << mode_params)
+#define RPL_CHANNELMODEIS(user, channel, mode, details)        IRC_NUMREPLY("324 " << user << " " << channel << " " << mode << " " << details)
 #define ERR_KEYSET(user, channel)               IRC_NUMREPLY("467 " << user << " " << channel << " :Channel key already set")
 #define ERR_CHANNELISFULL(user, channel)        IRC_NUMREPLY("471 " << user << " " << channel << " :Cannot join channel (+l)")
 #define ERR_UNKNOWNMODE(user, chara)            IRC_NUMREPLY("472 " << user << " " << chara << " :is unknown mode char to me")
