@@ -49,6 +49,7 @@ Client::Client(const Client& a)
 Client::~Client()
 {
     std::cout << "Removing Client ID " << _clientId << std::endl;
+    close(_connfd);
 }
 
 Client& Client::operator=(const Client& a)

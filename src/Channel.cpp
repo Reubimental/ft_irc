@@ -6,7 +6,17 @@
 
 static unsigned int	channelID = 1;
 
-Channel::Channel(): _channelId(channelID)
+Channel::Channel()
+	: _clients()
+	, _operators()
+	, _invited()
+	, _channelId(channelID)
+	, _channelName()
+	, _channelTopic()
+	, _inviteOnly(false)
+	, _topicOpAccess(false)
+	, _password()
+	, _userLimit()
 {
 	std::ostringstream ss;
 	ss << "Channel " << channelID;
@@ -15,7 +25,17 @@ Channel::Channel(): _channelId(channelID)
 	std::cout << "Channel of ID " << getChannelId() << " has been initiated." << std::endl;
 }
 
-Channel::Channel(std::string channelName, Client* sender): _channelId(channelID), _channelName(channelName)
+Channel::Channel(std::string channelName, Client* sender)
+	: _clients()
+	, _operators()
+	, _invited()
+	, _channelId(channelID)
+	, _channelName(channelName)
+	, _channelTopic()
+	, _inviteOnly(false)
+	, _topicOpAccess(false)
+	, _password()
+	, _userLimit()
 {
 	channelID++;
 	this->_operators.push_back(sender);

@@ -45,21 +45,42 @@ void Server::_Server(int port)
 }
 
 Server::Server()
-    : _password("password")
+	: _sockfd(0)
+	, _clients()
+	, _channels()
+	, _sockets()
+	, _numSockets(0)
+    , _password("password")
+	, _motd()
 {
     _Server(6667);
+	_motd.push_back("This is an MOTD!!!");
 }
 
 Server::Server(int port)
-    : _password("password")
+	: _sockfd(0)
+	, _clients()
+	, _channels()
+	, _sockets()
+	, _numSockets(0)
+    , _password("password")
+	, _motd()
 {
     _Server(port);
+	_motd.push_back("This is an MOTD!!!");
 }
 
 Server::Server(int port, const std::string& password)
-    : _password(password)
+	: _sockfd(0)
+	, _clients()
+	, _channels()
+	, _sockets()
+	, _numSockets(0)
+    , _password(password)
+	, _motd()
 {
     _Server(port);
+	_motd.push_back("This is an MOTD!!!");
 }
 
 // note: it's best practice to avoid having more than one allocated pointer
@@ -75,11 +96,6 @@ Server::~Server()
 		delete *chit;
 
     close(_sockfd);
-    for (std::vector<struct pollfd>::iterator it = _sockets.begin();
-            it != _sockets.end(); ++it)
-    {
-        close(it->fd);
-    }
 }
 
 int Server::pollSockets()
@@ -96,7 +112,7 @@ int Server::pollSockets()
 		int pollmode = POLLIN;
 		if ((*it)->isQueueWaiting()) pollmode |= POLLOUT;
 
-		// sockets[>1] are client fds
+		// sockets[>1] are client fdsgetNickname
 	    _sockets.push_back(CREATE_POLLFD((*it)->getSocket(), pollmode));
 	}
 	return poll(_sockets.data(), _sockets.size(), 60000);
@@ -108,6 +124,13 @@ void Server::run()
 
 	while (1)
 	{
+		// remove clients marked for removing
+		while (_clients_to_delete.size() > 0)
+		{
+			removeClient(_clients_to_delete.top());
+			_clients_to_delete.pop();
+		}
+
 		// gets all pollfds and runs poll
 		numEvent = pollSockets();
 
@@ -161,15 +184,13 @@ void Server::newClient()
 	fcntl(connfd, F_SETFL, O_NONBLOCK);
 	std::cout << "Connection success!" << std::endl;
 	_clients.push_back(new Client(this, connfd));
-	_nicknames.push_back((*_clients[_clients.size() - 1]).getNicknameAddr());
-	_sockets.push_back((struct pollfd){.fd = connfd, .events = 0, .revents = 0});
 }
 
 bool    Server::nicknameAvailable(const std::string& nick)
 {
-    for (nick_iter it = _nicknames.begin(); it != _nicknames.end(); ++it)
+    for (client_iter it = _clients.begin(); it != _clients.end(); ++it)
     {
-        if (**it == nick)
+        if ((*it)->getNickname() == nick)
             return false;
     }
     return true;
@@ -215,8 +236,19 @@ unsigned int	Server::findIdByNick(std::string nick)
 		if (nick == (*it)->getNickname())
 			return ((*it)->getClientId());
 	}
-	std::cout << "Nickname does not exist in database." << std::endl;
     return 0;
+}
+
+void	Server::removeClient(int client_id)
+{
+	for (client_iter it = _clients.begin(); it < _clients.end(); ++it)
+	{
+		if ((*it)->getClientId() == client_id)
+		{
+			removeClient(**it);
+			return ;
+		}
+	}
 }
 
 void   Server::removeClient(Client& client)
@@ -224,9 +256,6 @@ void   Server::removeClient(Client& client)
     // remove from all channels
     for (channel_iter it = _channels.begin(); it != _channels.end(); ++it)
         (*it)->removeClient(client.getNickname());
-
-    // remove the socket
-	close(client.getSocket());
 
     // remove the client from _clients
     for (client_iter it = _clients.begin(); it < _clients.end(); ++it)
@@ -243,24 +272,25 @@ void    Server::privmsgCommand(t_message message, Client& sender)
 {
     message.prefix = sender.getNickname();
 
-    // loop through parameters, skipping the first one
-	// incorrect, split the second command by comma, use that as recievers
-    for (param_iter param = message.params.begin() + 1;
-            param != message.params.end(); ++param)
+	if (message.params.size() < 2)
+		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "PRIVMSG"));
+
+	std::string reciever;
+    for (std::istringstream recievers(message.params[1]);
+			getline(recievers, reciever, ',');)
     {
-        if ((*param)[0] == '#')
+		message.params[1] = reciever;
+        if (reciever[0] == '#')
         {
-			std::cout << "Finding channel..." << std::endl;
-            // get channel, send privmsg
-            Channel* chan = getChannelByName(*param);
+            Channel* chan = getChannelByName(reciever);
             if (!chan)
-                sender.queueMessage(ERR_CANNOTSENDTOCHAN(sender.getNickname(), *param));
+                sender.queueMessage(ERR_CANNOTSENDTOCHAN(sender.getNickname(), reciever));
             else
 				chan->printMessage(message, sender);
         }
         else
         {
-            Client* client = getClientByNick(*param);
+            Client* client = getClientByNick(reciever);
             if (!client)
                 sender.queueMessage(ERR_NOSUCHNICK(sender.getNickname()));
             else
@@ -272,7 +302,8 @@ void    Server::privmsgCommand(t_message message, Client& sender)
 void    Server::quitCommand(t_message message, Client& sender)
 {
     (void)message;
-    removeClient(sender);
+	_clients_to_delete.push(sender.getClientId());
+    // removeClient(sender);
 }
 
 void    Server::pongCommand(t_message message, Client& sender)
@@ -287,7 +318,7 @@ void	Server::handleCommands(std::string input, Client& client)
 	std::string	token;
 	t_message	message;
 
-	std::cout << input << std::endl;
+	std::cout << "RECIEVED COMMAND :: " << input << std::endl;
 
 	if (iss >> token)
 	{
@@ -311,12 +342,8 @@ void	Server::handleCommands(std::string input, Client& client)
 	if (message.params.size() == 0)
 		return ;
 
-	std::cout << "COMMAND IS " << message.params[0] << std::endl;
-	std::cout << "SUFFIX IS " << message.suffix << std::endl;
-
 	if (!client.isRegistered())
 	{
-		std::cout << "CLIENTID " << client.getClientId() << " IS NOT REGISTERED" << std::endl;
 		if (message.params[0] == "PASS")
 			this->passCommand(message, client);
 		else if (message.params[0] == "NICK" && client.isAuthenticated())
@@ -325,6 +352,8 @@ void	Server::handleCommands(std::string input, Client& client)
 			this->userCommand(message, client);
 		else if (message.params[0] == "QUIT")
 			this->quitCommand(message, client);
+		else
+			std::cout << "**UNREGISTERED USER ATTEMPTED NONE REGISTERING COMMAND**" << std::endl;
 		return ;
 	}
 	if (message.params[0] == "KICK")
@@ -518,7 +547,6 @@ void	Server::passCommand(t_message message, Client& sender)
 		sender.queueMessage(ERR_ALREADYREGISTRED(sender.getNickname()));
 		return ;
 	}
-	std::cout << "'" << _password << "' '" << message.params[1] << "'" << std::endl;
 	if (message.params[1] == this->_password)
 	{
 		sender.authenticate();
@@ -570,21 +598,26 @@ void	Server::userCommand(t_message message, Client& sender)
 	if (sender.isRegistered())
 	{
 		sender.queueMessage(ERR_ALREADYREGISTRED(sender.getNickname()));
+		return ;
 	}
 	if (!sender.isAuthenticated())
 		return ;
-	if (message.params.size() < 4 && message.suffix.size() != 0)
+	
+	// check correct params
+	std::cout << "USER COMMAND DEBUG" << std::endl;
+	std::cout << message.params.size() << ", " << message.suffix.size() << std::endl;
+	if (!(message.params.size() == 4 && message.suffix.size() != 0)
+		&& !(message.params.size() >= 5 && message.suffix.size() == 0))
 	{
 		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "USER"));
 		return ;
 	}
-	if (sender.isRegistered())
-	{
-		sender.queueMessage(ERR_ALREADYREGISTRED(sender.getNickname()));
-		return ;
-	}
 	sender.setUsername(message.params[1]);
-	sender.setRealname(message.suffix);
+	if (message.suffix.size() != 0)
+		sender.setRealname(message.suffix);
+	else
+		sender.setRealname(message.params[4]);
+
 	if (!sender.getNickname().empty())
 		sender.beRegistered();
 }
@@ -604,20 +637,26 @@ void	Server::partCommand(t_message message, Client& sender)
 		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "PART"));
 		return ;
 	}
-	for (size_t i = 1; i != message.params.size(); i++)
+
+	// todo: change this shit -- need to send back the part message, comma seperated parameters
+	std::string channel_name;
+	for (std::istringstream channels(message.params[1]);
+			std::getline(channels, channel_name, ',');)
 	{
-		channel = this->getChannelByName(message.params[i]);
+		message.params[1] = channel_name;
+		channel = this->getChannelByName(channel_name);
 		if (!channel)
 		{
-			sender.queueMessage(ERR_NOSUCHCHANNEL(sender.getNickname(), message.params[i]));
-			return ;
+			sender.queueMessage(ERR_NOSUCHCHANNEL(sender.getNickname(), channel_name));
+			continue;
 		}
 		if (!channel->checkClient(sender.getNickname()))
 		{
-			sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), message.params[i]));
-			return ;
+			sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), channel_name));
+			continue;
 		}
 		channel->removeClient(sender.getNickname());
+		sender.queueMessage(message);
 	}
 }
 
@@ -663,6 +702,7 @@ std::vector<std::pair<std::string, std::string> > Server::joinTokenizer(const st
 
 void	Server::joinedChannel(Channel& channel, Client& sender, t_message joinMessage)
 {
+	joinMessage.params[1] = channel.getChannelName();
 	channel.printMessage(joinMessage);
 	sender.queueMessage(RPL_TOPIC(sender.getNickname(), channel.getChannelName(), channel.getTopic()));
 	sender.queueMessage(RPL_NAMREPLY(sender.getNickname(), channel.getChannelName(), channel.getAllUsers()));
@@ -697,22 +737,22 @@ void	Server::joinCommand(t_message message, Client& sender)
 			Channel* newChannel = new Channel(tokenizedInput[i].first, &sender);
 			this->_channels.push_back(newChannel);
 			joinedChannel(*newChannel, sender, message);
-			return ;
+			continue;
 		}
 		if (channel->checkInviteOnly() && !(channel->canClientJoin(sender.getClientId())))
 		{
 			sender.queueMessage(ERR_INVITEONLYCHAN(sender.getNickname(), tokenizedInput[i].first));
-			return ;
+			continue;
 		}
 		if (channel->getPassword().size() > 0 && channel->getPassword() != tokenizedInput[i].second)
 		{
 			sender.queueMessage(ERR_BADCHANNELKEY(sender.getNickname(), tokenizedInput[i].first));
-			return ;
+			continue;
 		}
 		if (channel->getUserLimit() > 0 && channel->getUserCount() >= channel->getUserLimit() && channel->checkOp(sender.getNickname(), 0))
 		{
 			sender.queueMessage(ERR_CHANNELISFULL(sender.getNickname(), tokenizedInput[i].first));
-			return ;
+			continue;
 		}
 		channel->addClient(sender);
 		joinedChannel(*channel, sender, message);

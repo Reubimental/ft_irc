@@ -18,7 +18,7 @@
 #define RPL_TOPIC(user, channel, topic)         IRC_NUMREPLY("332 " << user << " " << channel << " :" << topic)
 
 // joining
-#define RPL_NAMREPLY(user, channel, nicks)      IRC_NUMREPLY("353 " << user << " " << channel << " :" << nicks)
+#define RPL_NAMREPLY(user, channel, nicks)      IRC_NUMREPLY("353 " << user << " ahah " << channel << " :" << nicks)
 #define RPL_ENDOFNAMES(user, channel)           IRC_NUMREPLY("366 " << user << " " << channel << " :End of /NAMES list")
 
 // invites
@@ -47,7 +47,7 @@
 #define ERR_NORECIPIENT(user, command)          IRC_NUMREPLY("411 " << user << " :No recipient given " << command)
 #define ERR_NOTEXTTOSEND(user)                  IRC_NUMREPLY("412 " << user << " :No text to send")
 #define ERR_NOTONCHANNEL(user, channel)         IRC_NUMREPLY("442 " << user << " " << channel << " :You're not on that channel")
-#define ERR_NEEDMOREPARAMS(user, command)       IRC_NUMREPLY("461 " << user << " " << command << " :You may not reregister")
+#define ERR_NEEDMOREPARAMS(user, command)       IRC_NUMREPLY("461 " << user << " " << command << " :Not enough parameters")
 #define ERR_CHANOPRIVSNEEDED(user, channel)     IRC_NUMREPLY("482 " << user << " " << channel << " :You're not channel operator")
 
 // MOTD
