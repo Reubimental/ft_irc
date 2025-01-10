@@ -6,13 +6,6 @@
 #include <string>
 #include <algorithm>
 
-struct Commands
-{
-	std::string					prefix;
-	std::string					command;
-	std::vector<std::string>	params;
-};
-
 class Channel
 {
 	private:

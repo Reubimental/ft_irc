@@ -5,6 +5,7 @@
 #include "Channel.hpp"
 #include "ft_irc.hpp"
 #include <vector>
+#include <stack>
 
 /* temparary line */
 class Channel;
@@ -17,6 +18,7 @@ private:
 
 	void _Server(int port);
 	void removeSocket(int fd);
+	void removeClient(int client_id);
 	void removeClient(Client& client);
     int  pollSockets();
 	
@@ -26,13 +28,12 @@ private:
 	std::vector<struct pollfd>	_sockets;
 	int							_numSockets;
 	std::string					_password;
-	std::vector<std::string*>	_nicknames;
 	std::vector<std::string>	_motd;
+	std::stack<int>			_clients_to_delete;
 
     typedef std::vector<Client*>::iterator client_iter;
     typedef std::vector<Channel*>::iterator channel_iter;
     typedef std::vector<struct pollfd>::iterator socket_iter;
-    typedef std::vector<std::string*>::iterator nick_iter;
 
 public:
 	Server();
@@ -43,13 +44,13 @@ public:
 
 	void run();
 
-	void newClient();
-	bool nicknameAvailable(const std::string& nick);
-	Channel* getChannelByName(const std::string& channel);
-	Client* getClientByNick(const std::string& nick);
-    Client* getClientBySocket(int fd);
-	unsigned int	findIdByNick(std::string nick);
-	void		handleCommands(std::string input, Client& client);
+	void            newClient();
+	bool            nicknameAvailable(const std::string& nick);
+	Channel*        getChannelByName(const std::string& channel);
+	Client*         getClientByNick(const std::string& nick);
+    Client*         getClientBySocket(int fd);
+	unsigned int    findIdByNick(std::string nick);
+	void            handleCommands(std::string input, Client& client);
 
 	// SERVER COMMANDS
 	void    passCommand     (t_message message, Client& sender);

@@ -14,9 +14,16 @@ int main(int ac, char **av)
 
     int port = std::atoi(av[1]);
 
-    Server server(port, av[2]);
-
-    server.run();
+    try
+    {
+        Server server(port, av[2]);
+        server.run();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << "Failed to initialize server:\n";
+        std::cerr << e.what() << '\n';
+    }
 }
 
 std::string getInput(int fd)
