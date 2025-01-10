@@ -244,6 +244,7 @@ void    Server::privmsgCommand(t_message message, Client& sender)
     message.prefix = sender.getNickname();
 
     // loop through parameters, skipping the first one
+	// incorrect, split the second command by comma, use that as recievers
     for (param_iter param = message.params.begin() + 1;
             param != message.params.end(); ++param)
     {
@@ -255,7 +256,7 @@ void    Server::privmsgCommand(t_message message, Client& sender)
             if (!chan)
                 sender.queueMessage(ERR_CANNOTSENDTOCHAN(sender.getNickname(), *param));
             else
-				chan->printMessage(message);
+				chan->printMessage(message, sender);
         }
         else
         {

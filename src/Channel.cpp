@@ -102,6 +102,15 @@ void	Channel::printMessage(t_message& message)
 	}
 }
 
+void	Channel::printMessage(t_message& message, Client& sender)
+{
+	for (std::vector<Client*>::iterator it = _clients.begin(); it < _clients.end(); ++it)
+	{
+		if (&sender != *it)
+			(*it)->queueMessage(message);
+	}
+}
+
 bool	Channel::isFull() const
 {
 	if (this->_userLimit &&  this->_clients.size() >= this->_userLimit)

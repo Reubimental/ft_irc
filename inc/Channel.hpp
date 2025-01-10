@@ -48,6 +48,7 @@ class Channel
 		bool	checkClient(std::string nickname);
 		/*   Print sent messages   */
 		void	printMessage(t_message& message);
+		void	printMessage(t_message& message, Client& sender);
 		/*   Client Manipulation   */
 		bool	isFull() const;
 		void	addClient(Client& client);
