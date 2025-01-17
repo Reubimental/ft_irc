@@ -158,19 +158,20 @@ void	Channel::addInvite(unsigned int clientId)
 
 void	Channel::removeClient(std::string clientNickname)
 {
-	for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
-	{
-		if ((*it)->getNickname() == clientNickname)
-		{
-			_clients.erase(it);
-			break ;
-		}
-	}
 	for (std::vector<Client*>::iterator it = _operators.begin(); it != _operators.end(); ++it)
 	{
 		if ((*it)->getNickname() == clientNickname)
 		{
 			_operators.erase(it);
+			break ;
+		}
+	}
+	for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if ((*it)->getNickname() == clientNickname)
+		{
+			_clients.erase(it);
+			// tell clients about part
 			break ;
 		}
 	}

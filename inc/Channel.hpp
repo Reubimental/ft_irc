@@ -37,7 +37,7 @@ class Channel
 		bool		getTopicOpAccess() const;
 		std::string getAllUsers() const;
 		/*   Client Auth Check   */
-		bool	checkOp(std::string nickname, int change);
+		bool	checkOp(std::string nickname, int change=0);
 		bool	checkClient(std::string nickname);
 		/*   Print sent messages   */
 		void	printMessage(t_message& message);
@@ -58,7 +58,7 @@ class Channel
 		bool	canClientJoin(unsigned int clientID);
         void	implementMode(char toggle, char mode, std::string param, Client &sender);
 		void	modeIs(Client &sender);
-		void	modeChanged(std::string changer, char toggle, char mode, std::string param=NULL);
+		void	modeChanged(std::string changer, char toggle, char mode, std::string param=std::string());
         /*   Passwords   */
 		void		setPassword(std::string password);
 		std::string	getPassword() const;
