@@ -453,10 +453,16 @@ void	Server::kickCommand(t_message message, Client& sender) // KICK <#channel> <
 		sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), message.params[1]));
 		return ;
 	}
+	if (!channel->checkClient(message.params[2]))
+	{
+		sender.queueMessage(ERR_USERNOTINCHANNEL(sender.getNickname(), message.params[2], message.params[1]));
+		return ;
+	}
+
+	message.prefix = sender.getNickname();
+
+	channel->printMessage(message);
 	channel->removeClient(message.params[2]);
-	std::cout << "User " << message.params[2] << " has been kicked from channel " << message.params[1] << "." << std::endl;
-	if (message.suffix.size() > 0)
-		std::cout << "Reason: " << message.suffix << std::endl;
 }
 
 /*
@@ -649,6 +655,8 @@ void	Server::partCommand(t_message message, Client& sender)
 		return ;
 	}
 
+	message.prefix = sender.getNickname();
+
 	// todo: change this shit -- need to send back the part message, comma seperated parameters
 	std::string channel_name;
 	for (std::istringstream channels(message.params[1]);
@@ -666,8 +674,8 @@ void	Server::partCommand(t_message message, Client& sender)
 			sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), channel_name));
 			continue;
 		}
+		channel->printMessage(message);
 		channel->removeClient(sender.getNickname());
-		sender.queueMessage(message);
 	}
 }
 

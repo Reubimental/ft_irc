@@ -171,7 +171,6 @@ void	Channel::removeClient(std::string clientNickname)
 		if ((*it)->getNickname() == clientNickname)
 		{
 			_clients.erase(it);
-			// tell clients about part
 			break ;
 		}
 	}
