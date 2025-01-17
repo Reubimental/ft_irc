@@ -318,7 +318,7 @@ void	Server::handleCommands(std::string input, Client& client)
 	std::string	token;
 	t_message	message;
 
-	std::cout << "RECIEVED COMMAND :: " << input << std::endl;
+	std::cout << "RECIEVED COMMAND ::" << input << "::" << std::endl;
 
 	if (iss >> token)
 	{
@@ -328,7 +328,7 @@ void	Server::handleCommands(std::string input, Client& client)
 			message.params.push_back(token);
 	}
 
-	while (iss.good())
+	while ((iss >> std::ws).good())
 	{
 		if ((iss >> std::ws).peek() == ':')
 		{
@@ -339,8 +339,17 @@ void	Server::handleCommands(std::string input, Client& client)
 		iss >> token;
 		message.params.push_back(token);
 	}
+
 	if (message.params.size() == 0)
 		return ;
+
+	std::cout << "MESSAGE PARTS:" << std::endl;
+	if (message.prefix.size() > 0)
+		std::cout << "PREFIX:" << message.prefix << std::endl;
+	for (uint i = 0; i < message.params.size(); ++i)
+		std::cout << "PARAM " << i << ":" << message.params[i] << std::endl;
+	if (message.suffix.size() > 0)
+		std::cout << "PREFIX:" << message.suffix << std::endl;
 
 	if (!client.isRegistered())
 	{
@@ -783,15 +792,15 @@ void	Server::modeCommand(t_message message, Client& sender)
 	char		toggle;
 	std::vector<std::pair<char, std::string> >	tokenInput;
 	
-	if (message.params.size() < 1)
+	if (message.params.size() < 2)
 	{
 		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "MODE"));
 		return ;
 	}
-	channel = this->getChannelByName(message.params[0]);
+	channel = this->getChannelByName(message.params[1]);
 	if (!channel)
 	{
-		sender.queueMessage(ERR_NOSUCHCHANNEL(sender.getNickname(), message.params[0]));
+		sender.queueMessage(ERR_NOSUCHCHANNEL(sender.getNickname(), message.params[1]));
 		return ;
 	}
 	if (!channel->checkClient(sender.getNickname()))
@@ -799,7 +808,7 @@ void	Server::modeCommand(t_message message, Client& sender)
 		sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), channel->getChannelName()));
 		return ;
 	}
-	if (message.params.size() > 1)
+	if (message.params.size() > 2)
 	{
 		if (!channel->checkOp(sender.getNickname(), 0))
 		{
@@ -818,6 +827,8 @@ void	Server::modeCommand(t_message message, Client& sender)
 	channel->modeIs(sender);
 }
 
+// :prefix MODE #channel +itolk PARAMS PARAMS PARAMS
+
 std::vector<std::pair<char, std::string> > Server::modeTokenizer(char& toggle, Channel& channel, Client& sender, std::vector<std::string> params)
 {
 	std::vector<char> mode;
@@ -830,12 +841,12 @@ std::vector<std::pair<char, std::string> > Server::modeTokenizer(char& toggle, C
 	valid.push_back('o');
 	valid.push_back('l');
 	valid.push_back('k');
-	for (std::string::iterator it = params[1].begin(); it != params[1].end(); ++it)
+	for (std::string::iterator it = params[2].begin(); it != params[2].end(); ++it)
 	{
 		mode.push_back(*it);
 	}
 
-	for (std::vector<std::string>::iterator sit = params.begin() + 2; sit != params.end(); ++sit)
+	for (std::vector<std::string>::iterator sit = params.begin() + 3; sit != params.end(); ++sit)
 	{
 		parameters.push_back(*sit);
 	}

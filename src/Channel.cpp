@@ -166,6 +166,14 @@ void	Channel::removeClient(std::string clientNickname)
 			break ;
 		}
 	}
+	for (std::vector<Client*>::iterator it = _operators.begin(); it != _operators.end(); ++it)
+	{
+		if ((*it)->getNickname() == clientNickname)
+		{
+			_operators.erase(it);
+			break ;
+		}
+	}
 }
 
 void	Channel::setUserLimit(int limit)
@@ -286,6 +294,7 @@ void Channel::modeOperator(std::string params, Client &sender, char toggle)
 				return ;
 			}
         }
+		sender.queueMessage(ERR_NOSUCHNICK(sender.getNickname()));
     }
 }
 
@@ -314,8 +323,8 @@ bool Channel::canClientJoin(unsigned int clientID)
 
 void	Channel::modeIs(Client &sender)
 {
-	std::stringstream	mode_s;
-	std::stringstream	details_s;
+	std::ostringstream	mode_s;
+	std::ostringstream	details_s;
 	std::string mode = "+";
 	std::string details = "";
 	int userLimit = this->getUserLimit();
@@ -333,7 +342,10 @@ void	Channel::modeIs(Client &sender)
 		details_s << userLimit;
 	for (std::vector<Client *>::iterator it = this->_operators.begin(); it != this->_operators.end(); ++it)
 	{
-		details_s << (*it)->getNickname();
+		if (it == _operators.begin())
+			details_s << (*it)->getNickname();
+		else
+			details_s << " " << (*it)->getNickname();
 	}
 	mode.append(mode_s.str());
 	details.append(details_s.str());

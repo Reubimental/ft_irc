@@ -197,10 +197,9 @@ int Client::readSocket(struct pollfd& pollresult)
             return -1;
         _recieveBuffer.append(newInput);
         int m_len;
-        while ((m_len = _recieveBuffer.find('\n')) >= 0
-            || (m_len = _recieveBuffer.find('\r')) >= 0)
+        while ((m_len = _recieveBuffer.find_first_of("\n\r")) >= 0)
         {
-            _server->handleCommands(_recieveBuffer.substr(0, m_len), *this);
+            if (m_len > 0) _server->handleCommands(_recieveBuffer.substr(0, m_len), *this);
             _recieveBuffer = _recieveBuffer.substr(m_len + 1);
         }
     }
