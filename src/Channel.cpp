@@ -237,7 +237,7 @@ void	Channel::implementMode(char toggle, char mode, std::string param, Client& s
 
 			if (toggle == '-' && !this->getPassword().empty())
 			{
-				this->getPassword().clear();
+				this->clearPassword();
 				modeChanged(sender.getNickname(), toggle, mode);
 			}
 			else if (toggle == '+')
@@ -325,6 +325,11 @@ void	Channel::setPassword(std::string password)
 	this->_password = password;
 }
 
+void	Channel::clearPassword()
+{
+	this->_password.clear();
+}
+
 std::string	Channel::getPassword() const
 {
 	return (this->_password);
@@ -353,7 +358,7 @@ void	Channel::modeIs(Client &sender)
 
 	if (this->checkInviteOnly())
 		mode_s << "i";
-	if (this->getPassword() != "")
+	if (!this->getPassword().empty())
 		mode_s << "k";
 	if (userLimit != 0)
 		mode_s << "l";

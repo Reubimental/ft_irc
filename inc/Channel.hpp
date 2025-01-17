@@ -61,5 +61,6 @@ class Channel
 		void	modeChanged(std::string changer, char toggle, char mode, std::string param=std::string());
         /*   Passwords   */
 		void		setPassword(std::string password);
+		void		clearPassword();
 		std::string	getPassword() const;
 };
