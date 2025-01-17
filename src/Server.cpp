@@ -851,14 +851,14 @@ std::vector<std::pair<char, std::string> > Server::modeTokenizer(char& toggle, C
 	}
 	for (std::vector<char>::iterator mit = mode.begin(); mit != mode.end(); )
 	{
-		if (!std::find(valid.begin(), valid.end(), *mit))
+		if (std::find(valid.begin(), valid.end(), *mit) == valid.end())
 		{
 			sender.queueMessage(ERR_UNKNOWNMODE(sender.getNickname(), *mit));
 			mit = mode.erase(mit);
 		}
 		else if (*mit == 'i' || *mit == 't' || (toggle == '-' && (*mit == 'k' || *mit == 'l')))
 		{
-			channel.implementMode(toggle, *mit, params[1], sender);
+			channel.implementMode(toggle, *mit, NULL, sender);
 			mit = mode.erase(mit);
 		}
 		else
