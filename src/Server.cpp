@@ -766,7 +766,7 @@ void	Server::joinCommand(t_message message, Client& sender)
 			sender.queueMessage(ERR_BADCHANNELKEY(sender.getNickname(), tokenizedInput[i].first));
 			continue;
 		}
-		if (channel->getUserLimit() > 0 && channel->getUserCount() >= channel->getUserLimit() && channel->checkOp(sender.getNickname(), 0))
+		if (channel->getUserLimit() > 0 && channel->getUserCount() >= channel->getUserLimit())
 		{
 			sender.queueMessage(ERR_CHANNELISFULL(sender.getNickname(), tokenizedInput[i].first));
 			continue;
