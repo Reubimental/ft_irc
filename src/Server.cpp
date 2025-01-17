@@ -822,8 +822,13 @@ std::vector<std::pair<char, std::string> > Server::modeTokenizer(char& toggle, C
 	std::vector<char> mode;
 	std::vector<std::string> parameters;
 	std::vector<std::pair<char, std::string> >	tokenized;
-	std::vector<char> valid = {'i', 't', 'o', 'l', 'k'};
+	std::vector<char> valid;
 
+	valid.push_back('i');
+	valid.push_back('t');
+	valid.push_back('o');
+	valid.push_back('l');
+	valid.push_back('k');
 	for (std::string::iterator it = params[1].begin(); it != params[1].end(); ++it)
 	{
 		mode.push_back(*it);
@@ -853,7 +858,7 @@ std::vector<std::pair<char, std::string> > Server::modeTokenizer(char& toggle, C
 		}
 		else if (*mit == 'i' || *mit == 't' || (toggle == '-' && (*mit == 'k' || *mit == 'l')))
 		{
-			channel.implementMode(toggle, *mit, params, sender);
+			channel.implementMode(toggle, *mit, params[1], sender);
 			mit = mode.erase(mit);
 		}
 		else
