@@ -48,7 +48,7 @@ class Channel
 		void	addInvite(unsigned int clientId);
 		void	removeClient(std::string clientNickname);
 		void	setUserLimit(int limit);
-		int		getUserCount() const;
+		unsigned int		getUserCount() const;
 		unsigned int		getUserLimit() const;
 		/*   Topic   */
 		void		setTopic(const std::string& topic);

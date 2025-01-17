@@ -800,13 +800,13 @@ void	Server::modeCommand(t_message message, Client& sender)
 	}
 	if (message.params.size() > 1)
 	{
-		if (!channel->checkOp(sender.getNickname()))
+		if (!channel->checkOp(sender.getNickname(), 0))
 		{
 			sender.queueMessage(ERR_CHANOPRIVSNEEDED(sender.getNickname(), channel->getChannelName()));
 			return ;
 		}
 		tokenInput = modeTokenizer(toggle, *channel, sender, message.params);
-		if (tokenInput)
+		if (!tokenInput.empty())
 		{
 			for (std::vector<std::pair<char, std::string> >::iterator it = tokenInput.begin(); it != tokenInput.end(); ++it)
 			{
@@ -829,7 +829,7 @@ std::vector<std::pair<char, std::string> > Server::modeTokenizer(char& toggle, C
 		mode.push_back(*it);
 	}
 
-	for (std::vector<std::string>::iterator sit = params.begin() + 2; it != params.end(); ++it)
+	for (std::vector<std::string>::iterator sit = params.begin() + 2; sit != params.end(); ++sit)
 	{
 		parameters.push_back(*sit);
 	}
@@ -842,7 +842,7 @@ std::vector<std::pair<char, std::string> > Server::modeTokenizer(char& toggle, C
 	if (mode.size() == 0)
 	{
 		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "MODE"));
-		return (tokenizer);
+		return (tokenized);
 	}
 	for (std::vector<char>::iterator mit = mode.begin(); mit != mode.end(); )
 	{

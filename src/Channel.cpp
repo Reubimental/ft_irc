@@ -3,6 +3,7 @@
 #include <sstream>
 #include <vector>
 #include "num_responses.hpp"
+#include <string>
 
 static unsigned int	channelID = 1;
 
@@ -172,7 +173,7 @@ void	Channel::setUserLimit(int limit)
 	this->_userLimit = limit;
 }
 
-int	Channel::getUserCount() const
+unsigned int	Channel::getUserCount() const
 {
 	return (this->_clients.size());
 }
@@ -222,7 +223,7 @@ void	Channel::implementMode(char toggle, char mode, std::string params, Client& 
 
 		case('o'): // Give/Take Operator privilege
 
-            modeOperator(params, sender, toggle, mode);
+            modeOperator(params, sender, toggle);
 			break;
 
         case('l'): // Set/Remove user limit on Channel
@@ -253,7 +254,7 @@ void	Channel::implementMode(char toggle, char mode, std::string params, Client& 
 
 void Channel::modeOperator(std::string params, Client &sender, char toggle)
 {
-    if (!params)
+    if (params.empty())
     {
         sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "MODE"));
 		return;
@@ -265,34 +266,24 @@ void Channel::modeOperator(std::string params, Client &sender, char toggle)
 			if ((*cit)->getNickname() == params)
 			{
 				this->_operators.erase(cit);
-				break ;
-			}
-			else if (cit == this->_operators.end())
-			{
-				sender.queueMessage(ERR_NOSUCHNICK(sender.getNickname()));
+				return;
 			}
 		}
-    }
+		sender.queueMessage(ERR_NOSUCHNICK(sender.getNickname()));
+	}
     else if (toggle == '+')
     {
-		bool willAdd = true;
 		for (std::vector<Client*>::iterator opit = _operators.begin(); opit != _operators.end(); ++opit)
 		{
-			if ((*opit)->getNickname() == *params)
-			{
-				willAdd = false;
-				break;
-			}
+			if ((*opit)->getNickname() == params)
+				return ;
 		}
-		if (willAdd)
+		for (std::vector<Client*>::iterator cit = _clients.begin(); cit != _clients.end(); ++cit)
 		{
-			for (std::vector<Client*>::iterator cit = _clients.begin(); cit != _clients.end(); ++cit)
+			if ((*cit)->getNickname() == params)
 			{
-				if ((*cit)->getNickname() == *opNick)
-				{
-					_operators.push_back(*cit);
-					break ;
-				}
+				_operators.push_back(*cit);
+				return ;
 			}
         }
     }
@@ -323,24 +314,28 @@ bool Channel::canClientJoin(unsigned int clientID)
 
 void	Channel::modeIs(Client &sender)
 {
-	std::string mode == "+";
-	std::string details == "";
+	std::stringstream	mode_s;
+	std::stringstream	details_s;
+	std::string mode = "+";
+	std::string details = "";
 	int userLimit = this->getUserLimit();
 
-	if (this->checkInviteOnly)
-		mode << "i";
-	if (this->getPassword())
-		mode << "k";
+	if (this->checkInviteOnly())
+		mode_s << "i";
+	if (this->getPassword() != "")
+		mode_s << "k";
 	if (userLimit != 0)
-		mode << "l";
-	mode << "o";
+		mode_s << "l";
+	mode_s << "o";
 	if (this->getTopicOpAccess())
-		mode << "t";
+		mode_s << "t";
 	if (userLimit != 0)
-		details << userLimit;
+		details_s << userLimit;
 	for (std::vector<Client *>::iterator it = this->_operators.begin(); it != this->_operators.end(); ++it)
 	{
-		details << " " << (*it)->getNickname();
+		details_s << " " << (*it)->getNickname();
 	}
+	mode.append(mode_s.str());
+	details.append(details_s.str());
 	sender.queueMessage(RPL_CHANNELMODEIS(sender.getNickname(), this->getChannelName(), mode, details));
 }
