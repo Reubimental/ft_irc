@@ -528,6 +528,7 @@ void	Server::topicCommand(t_message message, Client& sender) // TOPIC <#channel>
 		return ;
 	}
 	channel->setTopic(message.suffix);
+	sender.queueMessage(RPL_TOPIC(sender.getNickname(), channel->getChannelName(), channel->getTopic()));
 }
 /*
 		ERR_NEEDMOREPARAMS              ERR_NOTONCHANNEL
