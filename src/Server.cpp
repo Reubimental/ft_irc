@@ -485,11 +485,11 @@ void	Server::inviteCommand(t_message message, Client& sender) // INVITE <nicknam
 	
 	if (!channel || !channel->checkClient(sender.getNickname()))
 	{
-		sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), channel->getChannelName()));
+		sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), channelName));
 		return ;
 	}
 	
-	Client*		target = channel->getClientByNick(targetName);
+	Client*		target = this->getClientByNick(targetName);
 	
 	if (!target)
 	{
