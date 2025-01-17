@@ -717,6 +717,7 @@ void	Server::joinedChannel(Channel& channel, Client& sender, t_message joinMessa
 	channel.printMessage(joinMessage);
 	sender.queueMessage(RPL_TOPIC(sender.getNickname(), channel.getChannelName(), channel.getTopic()));
 	sender.queueMessage(RPL_NAMREPLY(sender.getNickname(), channel.getChannelName(), channel.getAllUsers()));
+	channel.modeIs(sender);
 }
 
 void	Server::joinCommand(t_message message, Client& sender)

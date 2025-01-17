@@ -56,8 +56,9 @@ class Channel
 		/*   Modes   */
 		bool	checkInviteOnly();
 		bool	canClientJoin(unsigned int clientID);
-        void	implementMode(char toggle, char mode, std::string params, Client &sender);
+        void	implementMode(char toggle, char mode, std::string param, Client &sender);
 		void	modeIs(Client &sender);
+		void	modeChanged(std::string changer, char toggle, char mode, std::string param=NULL);
         /*   Passwords   */
 		void		setPassword(std::string password);
 		std::string	getPassword() const;
