@@ -343,13 +343,14 @@ void	Server::handleCommands(std::string input, Client& client)
 	if (message.params.size() == 0)
 		return ;
 
-	std::cout << "MESSAGE PARTS:" << std::endl;
-	if (message.prefix.size() > 0)
-		std::cout << "PREFIX:" << message.prefix << std::endl;
-	for (uint i = 0; i < message.params.size(); ++i)
-		std::cout << "PARAM " << i << ":" << message.params[i] << std::endl;
-	if (message.suffix.size() > 0)
-		std::cout << "PREFIX:" << message.suffix << std::endl;
+	// // output message parts
+	// std::cout << "MESSAGE PARTS:" << std::endl;
+	// if (message.prefix.size() > 0)
+	// 	std::cout << "PREFIX:" << message.prefix << std::endl;
+	// for (uint i = 0; i < message.params.size(); ++i)
+	// 	std::cout << "PARAM " << i << ":" << message.params[i] << std::endl;
+	// if (message.suffix.size() > 0)
+	// 	std::cout << "PREFIX:" << message.suffix << std::endl;
 
 	if (!client.isRegistered())
 	{

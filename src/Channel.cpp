@@ -335,7 +335,7 @@ void	Channel::modeIs(Client &sender)
 		mode_s << "k";
 	if (userLimit != 0)
 		mode_s << "l";
-	mode_s << "o";
+	for (uint i = 0; i < _operators.size(); ++i) mode_s << "o";
 	if (this->getTopicOpAccess())
 		mode_s << "t";
 	if (userLimit != 0)
