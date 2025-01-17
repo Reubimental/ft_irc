@@ -467,27 +467,27 @@ void	Server::kickCommand(t_message message, Client& sender) // KICK <#channel> <
 */
 void	Server::inviteCommand(t_message message, Client& sender) // INVITE <nickname> <#channelname>
 {
-	Channel*	channel;
-
 	if (message.params.size() < 3)
 	{
 		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "INVITE"));
 		return ;
 	}
-
+	Channel*	channel;
 	std::string	targetName = message.params[1];
 	std::string	channelName = message.params[2];
-	Client*		target = this->getClientByNick(targetName);
-
-	if (!target)
-	{
-		sender.queueMessage(ERR_NOSUCHNICK(sender.getNickname()));
-		return ;
-	}
 	channel = this->getChannelByName(channelName);
+	
 	if (!channel || !channel->checkClient(sender.getNickname()))
 	{
 		sender.queueMessage(ERR_NOTONCHANNEL(sender.getNickname(), channel->getChannelName()));
+		return ;
+	}
+	
+	Client*		target = channel->getClientByNick(targetName);
+	
+	if (!target)
+	{
+		sender.queueMessage(ERR_NOSUCHNICK(sender.getNickname()));
 		return ;
 	}
 	if (channel->checkClient(targetName))
