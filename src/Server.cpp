@@ -121,6 +121,8 @@ int Server::pollSockets()
 void Server::run()
 {
 	int numEvent;
+	Client* client;
+	std::string console_input;
 
 	while (1)
 	{
@@ -148,12 +150,16 @@ void Server::run()
 		else // poll return!
 		{
 			std::cout << "POLL RETURNED" << std::endl;
-			// if stdin has data, quit -- maybe add input handling later?
-			if (_sockets[0].revents & POLLIN) {std::cin.ignore(); break ;}
-			// if new client waiting, add it
+			// handle console input
+			if (_sockets[0].revents & POLLIN)
+			{
+				std::getline(std::cin, console_input);
+				if (console_input == "QUIT")
+					break ;
+			}
+			// handle new clients
 			if (_sockets[1].revents & POLLIN) newClient();
 
-			Client* client;
 			for (socket_iter it = _sockets.begin() + 2; it < _sockets.end(); ++it)
 			{
 				std::cout << it->fd << ": " << it->revents << std::endl;
@@ -167,7 +173,6 @@ void Server::run()
 			// ping clients
 		}
 	}
-
 }
 
 void Server::newClient()
