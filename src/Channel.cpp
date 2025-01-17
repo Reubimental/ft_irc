@@ -333,7 +333,7 @@ void	Channel::modeIs(Client &sender)
 		details_s << userLimit;
 	for (std::vector<Client *>::iterator it = this->_operators.begin(); it != this->_operators.end(); ++it)
 	{
-		details_s << " " << (*it)->getNickname();
+		details_s << (*it)->getNickname();
 	}
 	mode.append(mode_s.str());
 	details.append(details_s.str());
