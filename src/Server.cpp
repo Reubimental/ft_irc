@@ -741,7 +741,7 @@ void	Server::joinCommand(t_message message, Client& sender)
 		return ;
 	}
 	channels = message.params[1];
-	std::string	passwords = message.params.size() < 2 ? message.params[2] : "";
+	std::string	passwords = message.params.size() > 2 ? message.params[2] : "";
 	tokenizedInput = this->joinTokenizer(channels, passwords, sender);
 	for (size_t i = 0; i < tokenizedInput.size(); i++)
 	{
@@ -766,7 +766,6 @@ void	Server::joinCommand(t_message message, Client& sender)
 		}
 		if (channel->getPassword().size() > 0 && channel->getPassword() != tokenizedInput[i].second)
 		{
-			sender.queueMessage(channel->getPassword());
 			sender.queueMessage(ERR_BADCHANNELKEY(sender.getNickname(), tokenizedInput[i].first));
 			continue;
 		}
