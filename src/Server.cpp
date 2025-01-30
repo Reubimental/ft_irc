@@ -747,6 +747,7 @@ void	Server::joinCommand(t_message message, Client& sender)
 		}
 		if (channel->getPassword().size() > 0 && channel->getPassword() != tokenizedInput[i].second)
 		{
+			sender.queueMessage(channel->getPassword());
 			sender.queueMessage(ERR_BADCHANNELKEY(sender.getNickname(), tokenizedInput[i].first));
 			continue;
 		}
