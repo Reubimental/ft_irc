@@ -46,6 +46,7 @@
 #define ERR_CANNOTSENDTOCHAN(user, channel)     IRC_NUMREPLY("404 " << user << " " << channel << " :Cannot send to channel")
 #define ERR_NORECIPIENT(user, command)          IRC_NUMREPLY("411 " << user << " :No recipient given " << command)
 #define ERR_NOTEXTTOSEND(user)                  IRC_NUMREPLY("412 " << user << " :No text to send")
+#define ERR_USERNOTINCHANNEL(user, nick, channel)    IRC_NUMREPLY("441 " << user << " " << nick << " " << channel << " :They aren't on that channel")
 #define ERR_NOTONCHANNEL(user, channel)         IRC_NUMREPLY("442 " << user << " " << channel << " :You're not on that channel")
 #define ERR_NEEDMOREPARAMS(user, command)       IRC_NUMREPLY("461 " << user << " " << command << " :Not enough parameters")
 #define ERR_CHANOPRIVSNEEDED(user, channel)     IRC_NUMREPLY("482 " << user << " " << channel << " :You're not channel operator")

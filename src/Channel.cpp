@@ -158,6 +158,14 @@ void	Channel::addInvite(unsigned int clientId)
 
 void	Channel::removeClient(std::string clientNickname)
 {
+	for (std::vector<Client*>::iterator it = _operators.begin(); it != _operators.end(); ++it)
+	{
+		if ((*it)->getNickname() == clientNickname)
+		{
+			_operators.erase(it);
+			break ;
+		}
+	}
 	for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		if ((*it)->getNickname() == clientNickname)
@@ -193,37 +201,55 @@ std::string	Channel::getTopic() const
 	return (this->_channelTopic);
 }
 
-void	Channel::implementMode(char toggle, char mode, std::string params, Client& sender)
+void	Channel::implementMode(char toggle, char mode, std::string param, Client& sender)
 {
 	switch(mode)
 	{
 		case('i'): // Set/Remove Invite Only channel
 
 			if (toggle == '-')
+			{
 				this->_inviteOnly = false;
+				modeChanged(sender.getNickname(), toggle, mode);
+			}
 			else if (toggle == '+')
+			{
 				this->_inviteOnly = true;
+				modeChanged(sender.getNickname(), toggle, mode);
+			}
 			break ;
 
 		case('t'): // Set/Remove The ability to use TOPIC command to Operator Only.
 
 			if (toggle == '-' && this->_topicOpAccess)
+			{
 				this->_topicOpAccess = false;
+				modeChanged(sender.getNickname(), toggle, mode);
+			}
 			else if (toggle == '+' && !this->_topicOpAccess)
+			{
 				this->_topicOpAccess = true;
+				modeChanged(sender.getNickname(), toggle, mode);
+			}
 			break ;
 
 		case('k'): // Set/Remove the channel key (password)
 
 			if (toggle == '-' && !this->getPassword().empty())
-				this->getPassword().clear();
+			{
+				this->clearPassword();
+				modeChanged(sender.getNickname(), toggle, mode);
+			}
 			else if (toggle == '+')
-				this->setPassword(params);
+			{
+				this->setPassword(param);
+				modeChanged(sender.getNickname(), toggle, mode, param);
+			}
 			break ;
 
 		case('o'): // Give/Take Operator privilege
 
-            modeOperator(params, sender, toggle);
+            modeOperator(param, sender, toggle);
 			break;
 
         case('l'): // Set/Remove user limit on Channel
@@ -231,14 +257,16 @@ void	Channel::implementMode(char toggle, char mode, std::string params, Client& 
 			if (toggle == '-')
 			{
 				this->setUserLimit(0);
+				modeChanged(sender.getNickname(), toggle, mode);
 			}
 			else if (toggle == '+')
 			{
 				char *end;
-				int newLimit = std::strtol(params.c_str(), &end, 10);
+				int newLimit = std::strtol(param.c_str(), &end, 10);
 				if (*end == '\0')
 				{
 					this->setUserLimit(newLimit);
+					modeChanged(sender.getNickname(), toggle, mode, param);
 				}
 				else
 				{
@@ -252,9 +280,9 @@ void	Channel::implementMode(char toggle, char mode, std::string params, Client& 
 	}
 }
 
-void Channel::modeOperator(std::string params, Client &sender, char toggle)
+void Channel::modeOperator(std::string param, Client &sender, char toggle)
 {
-    if (params.empty())
+    if (param.empty())
     {
         sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "MODE"));
 		return;
@@ -263,9 +291,10 @@ void Channel::modeOperator(std::string params, Client &sender, char toggle)
     {
 		for (std::vector<Client*>::iterator cit = this->_operators.begin(); cit != this->_operators.end(); ++cit)
 		{
-			if ((*cit)->getNickname() == params)
+			if ((*cit)->getNickname() == param)
 			{
 				this->_operators.erase(cit);
+				modeChanged(sender.getNickname(), toggle, 'o', param);
 				return;
 			}
 		}
@@ -275,23 +304,30 @@ void Channel::modeOperator(std::string params, Client &sender, char toggle)
     {
 		for (std::vector<Client*>::iterator opit = _operators.begin(); opit != _operators.end(); ++opit)
 		{
-			if ((*opit)->getNickname() == params)
+			if ((*opit)->getNickname() == param)
 				return ;
 		}
 		for (std::vector<Client*>::iterator cit = _clients.begin(); cit != _clients.end(); ++cit)
 		{
-			if ((*cit)->getNickname() == params)
+			if ((*cit)->getNickname() == param)
 			{
 				_operators.push_back(*cit);
+				modeChanged(sender.getNickname(), toggle, 'o', param);
 				return ;
 			}
         }
+		sender.queueMessage(ERR_NOSUCHNICK(sender.getNickname()));
     }
 }
 
 void	Channel::setPassword(std::string password)
 {
 	this->_password = password;
+}
+
+void	Channel::clearPassword()
+{
+	this->_password.clear();
 }
 
 std::string	Channel::getPassword() const
@@ -314,28 +350,44 @@ bool Channel::canClientJoin(unsigned int clientID)
 
 void	Channel::modeIs(Client &sender)
 {
-	std::stringstream	mode_s;
-	std::stringstream	details_s;
+	std::ostringstream	mode_s;
+	std::ostringstream	details_s;
 	std::string mode = "+";
 	std::string details = "";
 	int userLimit = this->getUserLimit();
 
 	if (this->checkInviteOnly())
 		mode_s << "i";
-	if (this->getPassword() != "")
+	if (!this->getPassword().empty())
 		mode_s << "k";
 	if (userLimit != 0)
 		mode_s << "l";
-	mode_s << "o";
+	for (uint i = 0; i < _operators.size(); ++i) mode_s << "o";
 	if (this->getTopicOpAccess())
 		mode_s << "t";
 	if (userLimit != 0)
 		details_s << userLimit;
 	for (std::vector<Client *>::iterator it = this->_operators.begin(); it != this->_operators.end(); ++it)
 	{
-		details_s << (*it)->getNickname();
+		if (details_s.str().size() == 0)
+			details_s << (*it)->getNickname();
+		else
+			details_s << " " << (*it)->getNickname();
 	}
 	mode.append(mode_s.str());
 	details.append(details_s.str());
 	sender.queueMessage(RPL_CHANNELMODEIS(sender.getNickname(), this->getChannelName(), mode, details));
+}
+
+void Channel::modeChanged(std::string changer, char toggle, char mode, std::string param)
+{
+	t_message message;
+
+	message.prefix = changer;
+	message.params.push_back("MODE");
+	message.params.push_back(_channelName);
+	message.params.push_back("");
+	(message.params.end() - 1)->append(1, toggle).append(1, mode);
+	if (param.size() > 0) message.params.push_back(param);
+	printMessage(message);
 }
