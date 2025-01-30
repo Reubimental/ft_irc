@@ -774,6 +774,10 @@ void	Server::joinCommand(t_message message, Client& sender)
 			sender.queueMessage(ERR_CHANNELISFULL(sender.getNickname(), tokenizedInput[i].first));
 			continue;
 		}
+		if (channel->checkClient(sender.getNickname()))
+		{
+			continue;
+		}
 		channel->addClient(sender);
 		joinedChannel(*channel, sender, message);
 	}
