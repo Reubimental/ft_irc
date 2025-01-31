@@ -277,7 +277,10 @@ void    Server::privmsgCommand(t_message message, Client& sender)
     message.prefix = sender.getNickname();
 
 	if (message.params.size() < 2)
+	{
 		sender.queueMessage(ERR_NEEDMOREPARAMS(sender.getNickname(), "PRIVMSG"));
+		return ;
+	}
 
 	std::string reciever;
     for (std::istringstream recievers(message.params[1]);
